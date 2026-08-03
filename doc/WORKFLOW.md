@@ -41,7 +41,7 @@ git checkout -b feat/<이슈번호>-<기능명>
 ## 6. QA 및 이슈 보고
 
 - 정상·로딩·빈 상태·오류·권한 거부 상태를 확인합니다.
-- 발견 이슈는 `doc/fe/issues/` 템플릿으로 기록합니다.
+- 발견 이슈는 `doc/issues/_TEMPLATE-report.md`를 기준으로 `doc/fe/issues/`에 기록합니다.
 - Major 이슈 이상은 개발자 검토 후 수정 방향을 확정합니다.
 
 ## 7. 수정
@@ -52,7 +52,7 @@ git checkout -b feat/<이슈번호>-<기능명>
 
 ## 8. 최종 개발 보고 및 검토
 
-- 위치: `doc/fe/reports/`
+- 위치: `doc/fe/reports/` (`doc/reports/_TEMPLATE-final-report.md` 기준)
 - 구현 내용, 계획 대비 변경점, QA 결과, 제한사항을 기록합니다.
 - 개발자 최종 검토를 받습니다.
 
