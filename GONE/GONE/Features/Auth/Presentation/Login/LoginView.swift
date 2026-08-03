@@ -61,25 +61,25 @@ struct LoginView: View {
             Text("ONE")
                 .foregroundStyle(Color.goneTextPrimary)
         }
-        .font(.system(size: 27, weight: .bold))
+        .font(GONEFont.sfPro(size: 30, weight: .bold))
         .accessibilityLabel("GONE")
     }
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             Text("학교생활을 더 간편하게")
-                .font(.system(size: 22, weight: .bold))
+                .font(GONEFont.sfPro(size: 24, weight: .bold))
                 .foregroundStyle(Color.goneTextPrimary)
 
             Text("GONE에 로그인하고 학교의 서비스를\n한곳에서 이용해보세요.")
-                .font(.system(size: 14))
+                .font(GONEFont.sfPro(size: 16))
                 .foregroundStyle(Color.goneTextSecondary)
                 .lineSpacing(3)
         }
     }
 
     private var inputFields: some View {
-        VStack(spacing: GONESpacing.xLarge) {
+        VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
             GONEUnderlinedTextField(
                 title: "아이디",
                 placeholder: "아이디 또는 전화번호를 입력해주세요",
@@ -99,7 +99,7 @@ struct LoginView: View {
 
             if let loginErrorMessage = viewModel.loginErrorMessage {
                 Text(loginErrorMessage)
-                    .font(.footnote)
+                    .font(GONEFont.sfPro(size: 16))
                     .foregroundStyle(Color.goneStatusError)
                     .accessibilityLabel("로그인 오류: \(loginErrorMessage)")
             }
@@ -107,20 +107,19 @@ struct LoginView: View {
     }
 
     private var signUpButton: some View {
-        Button(action: onSignUpTapped) {
-            HStack(spacing: 5) {
-                Text("아직 회원이 아니신가요?")
-                    .foregroundStyle(Color.goneTextSecondary)
-                Text("회원가입")
-                    .foregroundStyle(Color.goneBrandPrimary)
-                    .fontWeight(.semibold)
-            }
-            .font(.system(size: 13))
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
+        HStack(spacing: 5) {
+            Text("아직 회원이 아니신가요?")
+                .foregroundStyle(Color.goneTextSecondary)
+
+            Button("회원가입", action: onSignUpTapped)
+                .foregroundStyle(Color.goneBrandPrimary)
+                .fontWeight(.semibold)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+                .accessibilityHint("회원가입 화면으로 이동합니다.")
         }
-        .accessibilityLabel("회원가입")
-        .accessibilityHint("회원가입 화면으로 이동합니다.")
+        .font(GONEFont.sfPro(size: 15))
+        .frame(maxWidth: .infinity)
     }
 
     private func submit() {

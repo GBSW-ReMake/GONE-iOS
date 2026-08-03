@@ -21,6 +21,12 @@ enum GONECornerRadius {
     static let button: CGFloat = 16
 }
 
+enum GONEFont {
+    static func sfPro(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        .system(size: size, weight: weight, design: .default)
+    }
+}
+
 extension Color {
     static let goneBrandPrimary = Color(red: 91 / 255, green: 141 / 255, blue: 239 / 255)
     static let goneTextPrimary = Color(red: 31 / 255, green: 41 / 255, blue: 55 / 255)
