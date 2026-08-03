@@ -55,6 +55,8 @@ GONE 사용자가 아이디(또는 전화번호)와 비밀번호로 인증한 �
 
 ### 데이터 흐름
 
+이번 기능은 **MVVM을 기본 구조**로 사용합니다. 로그인 API·Keychain처럼 외부 I/O가 연결되는 시점에만 UseCase와 Repository를 추가해, 화면 규모에 비해 과도한 계층 분리를 피합니다.
+
 ```text
 LoginView
 → LoginViewModel
