@@ -14,6 +14,9 @@ struct GONEUnderlinedTextField: View {
     let textContentType: UITextContentType?
     let keyboardType: UIKeyboardType
     let errorMessage: String?
+    let trailingActionTitle: String?
+    let isTrailingActionEnabled: Bool
+    let trailingAction: (() -> Void)?
 
     @Binding private var text: String
     @FocusState private var isFocused: Bool
@@ -25,7 +28,10 @@ struct GONEUnderlinedTextField: View {
         isSecure: Bool = false,
         textContentType: UITextContentType? = nil,
         keyboardType: UIKeyboardType = .default,
-        errorMessage: String? = nil
+        errorMessage: String? = nil,
+        trailingActionTitle: String? = nil,
+        isTrailingActionEnabled: Bool = true,
+        trailingAction: (() -> Void)? = nil
     ) {
         self.title = title
         self.placeholder = placeholder
@@ -34,6 +40,9 @@ struct GONEUnderlinedTextField: View {
         self.textContentType = textContentType
         self.keyboardType = keyboardType
         self.errorMessage = errorMessage
+        self.trailingActionTitle = trailingActionTitle
+        self.isTrailingActionEnabled = isTrailingActionEnabled
+        self.trailingAction = trailingAction
     }
 
     private var underlineColor: Color {
@@ -50,29 +59,39 @@ struct GONEUnderlinedTextField: View {
                 .font(GONEFont.sfPro(size: 13, weight: .medium))
                 .foregroundStyle(Color.goneTextSecondary)
 
-            Group {
-                if isSecure {
-                    SecureField(
-                        "",
-                        text: $text,
-                        prompt: Text(placeholder).foregroundStyle(Color.goneTextTertiary)
-                    )
-                } else {
-                    TextField(
-                        "",
-                        text: $text,
-                        prompt: Text(placeholder).foregroundStyle(Color.goneTextTertiary)
-                    )
+            HStack(spacing: GONESpacing.small) {
+                Group {
+                    if isSecure {
+                        SecureField(
+                            "",
+                            text: $text,
+                            prompt: Text(placeholder).foregroundStyle(Color.goneTextTertiary)
+                        )
+                    } else {
+                        TextField(
+                            "",
+                            text: $text,
+                            prompt: Text(placeholder).foregroundStyle(Color.goneTextTertiary)
+                        )
+                    }
+                }
+                .font(GONEFont.sfPro(size: 17))
+                .foregroundStyle(Color.goneTextPrimary)
+                .textContentType(textContentType)
+                .keyboardType(keyboardType)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .focused($isFocused)
+
+                if let trailingActionTitle, let trailingAction {
+                    Button(trailingActionTitle, action: trailingAction)
+                        .font(GONEFont.sfPro(size: 14, weight: .semibold))
+                        .foregroundStyle(isTrailingActionEnabled ? Color.goneBrandPrimary : Color.goneTextTertiary)
+                        .disabled(!isTrailingActionEnabled)
+                        .frame(minHeight: 44)
                 }
             }
-            .font(GONEFont.sfPro(size: 17))
-            .foregroundStyle(Color.goneTextPrimary)
-            .textContentType(textContentType)
-            .keyboardType(keyboardType)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .focused($isFocused)
-            .padding(.vertical, 10)
+            .padding(.vertical, 2)
             .frame(minHeight: 48)
             .overlay(alignment: .bottom) {
                 Rectangle()

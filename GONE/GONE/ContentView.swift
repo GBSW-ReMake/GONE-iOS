@@ -8,8 +8,21 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var isShowingSignup = false
+
     var body: some View {
-        LoginView()
+        Group {
+            if isShowingSignup {
+                SignupView {
+                    isShowingSignup = false
+                }
+            } else {
+                LoginView(onSignUpTapped: {
+                    isShowingSignup = true
+                })
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isShowingSignup)
     }
 }
 
