@@ -4,7 +4,7 @@
 > **작성일**: 2026-08-03  
 > **작업 번호**: #01
 > **관련 이슈**: [#1](https://github.com/GBSW-ReMake/GONE-iOS/issues/1)  
-> **브랜치**: `feat/1-로그인`
+> **브랜치**: `feat/1-login`
 
 ---
 

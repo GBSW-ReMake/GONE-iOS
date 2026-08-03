@@ -4,7 +4,7 @@
 > **GitHub 이슈**: [#1](https://github.com/GBSW-ReMake/GONE-iOS/issues/1)
 > **심각도**: Minor 🟡  
 > **발견일**: 2026-08-03  
-> **발견 브랜치**: `feat/1-로그인`  
+> **발견 브랜치**: `feat/1-login`
 > **상태**: 해결 완료
 
 ---

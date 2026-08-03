@@ -3,8 +3,8 @@
 > **완료일**: 2026-08-03  
 > **작업 번호**: #01
 > **관련 이슈**: [#1](https://github.com/GBSW-ReMake/GONE-iOS/issues/1)  
-> **PR**: [#2](https://github.com/GBSW-ReMake/GONE-iOS/pull/2) (Draft)
-> **브랜치**: `feat/1-로그인`
+> **PR**: 생성 예정 (기존 Draft PR #2 교체 예정)
+> **브랜치**: `feat/1-login`
 
 ---
 
