@@ -84,13 +84,37 @@ struct GONEUnderlinedTextField: View {
                 .focused($isFocused)
 
                 if let trailingActionTitle, let trailingAction {
-                    Button(trailingActionTitle, action: trailingAction)
-                        .font(GONEFont.sfPro(size: 14, weight: .semibold))
-                        .tint(isTrailingActionEnabled ? Color.goneBrandPrimary : Color.goneTextTertiary)
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.roundedRectangle(radius: 8))
-                        .disabled(!isTrailingActionEnabled)
-                        .frame(minHeight: 44)
+                    Button {
+                        guard isTrailingActionEnabled else { return }
+                        trailingAction()
+                    } label: {
+                        Text(trailingActionTitle)
+                            .font(GONEFont.sfPro(size: 14, weight: .semibold))
+                            .foregroundStyle(
+                                isTrailingActionEnabled
+                                    ? Color.goneBrandPrimary
+                                    : Color.goneTextTertiary
+                            )
+                            .padding(.horizontal, GONESpacing.medium)
+                            .frame(minHeight: 36)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(
+                                        isTrailingActionEnabled
+                                            ? Color.goneBrandPrimary
+                                            : Color.goneBorderDefault,
+                                        lineWidth: 1
+                                    )
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .frame(minHeight: 44)
+                    .accessibilityHint(
+                        isTrailingActionEnabled
+                            ? "인증번호를 요청합니다."
+                            : "전화번호를 입력한 후 사용할 수 있습니다."
+                    )
                 }
             }
             .padding(.vertical, 2)
