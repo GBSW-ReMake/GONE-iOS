@@ -41,7 +41,7 @@ git checkout -b feat/<이슈번호>-<기능명>
 ## 6. QA 및 이슈 보고
 
 - 정상·로딩·빈 상태·오류·권한 거부 상태를 확인합니다.
-- 발견 이슈는 `doc/fe/issues/` 템플릿으로 기록합니다.
+- 발견 이슈는 `doc/issues/_TEMPLATE-report.md`를 기준으로 `doc/fe/issues/`에 기록합니다.
 - Major 이슈 이상은 개발자 검토 후 수정 방향을 확정합니다.
 
 ## 7. 수정
@@ -52,7 +52,7 @@ git checkout -b feat/<이슈번호>-<기능명>
 
 ## 8. 최종 개발 보고 및 검토
 
-- 위치: `doc/fe/reports/`
+- 위치: `doc/fe/reports/` (`doc/reports/_TEMPLATE-final-report.md` 기준)
 - 구현 내용, 계획 대비 변경점, QA 결과, 제한사항을 기록합니다.
 - 개발자 최종 검토를 받습니다.
 
@@ -71,6 +71,7 @@ git push origin feat/12-실습실-신청
 - 제목: `[feat] 기능명 (#이슈번호)`
 - 본문: [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) 사용
 - **기능 개발 PR은 예외 없이 `dev`를 대상으로 합니다.**
+- PR은 Draft가 아닌 **Ready for review** 상태로 생성합니다.
 - `main` 대상 PR은 모든 개발과 통합 QA가 끝난 최종 릴리즈에만 사용하며, 개발자가 명시적으로 요청하기 전에는 생성하지 않습니다.
 
 ## 11. 개발자 머지

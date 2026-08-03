@@ -21,13 +21,13 @@ main
 ## 이름 규칙
 
 ```text
-feat/12-실습실-신청
-fix/31-외출-상태-갱신-실패
-hotfix-로그인-차단
+feat/12-lab-reservation
+fix/31-outing-status-update
+hotfix-login-blocked
 ```
 
 - GitHub 이슈 연동 작업은 이슈 번호를 반드시 포함합니다.
-- 기능명은 짧고 대상이 명확한 한글 케밥 표기법을 사용합니다.
+- 기능명은 짧고 대상이 명확한 **영문 소문자 케밥 표기법**을 사용합니다. Unicode 문자로 인한 GitHub ref 경고를 방지하기 위해 브랜치명에는 한글·공백·특수문자를 사용하지 않습니다.
 - 브랜치는 계획서 승인 후 생성합니다.
 
 ## 병합 규칙
