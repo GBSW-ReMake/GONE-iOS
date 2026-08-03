@@ -99,7 +99,7 @@ struct LoginView: View {
 
             if let loginErrorMessage = viewModel.loginErrorMessage {
                 Text(loginErrorMessage)
-                    .font(GONEFont.sfPro(size: 15))
+                    .font(GONEFont.sfPro(size: 14))
                     .foregroundStyle(Color.goneStatusError)
                     .accessibilityLabel("로그인 오류: \(loginErrorMessage)")
             }
