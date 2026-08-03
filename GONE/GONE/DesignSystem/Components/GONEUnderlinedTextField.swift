@@ -86,7 +86,9 @@ struct GONEUnderlinedTextField: View {
                 if let trailingActionTitle, let trailingAction {
                     Button(trailingActionTitle, action: trailingAction)
                         .font(GONEFont.sfPro(size: 14, weight: .semibold))
-                        .foregroundStyle(isTrailingActionEnabled ? Color.goneBrandPrimary : Color.goneTextTertiary)
+                        .tint(isTrailingActionEnabled ? Color.goneBrandPrimary : Color.goneTextTertiary)
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.roundedRectangle(radius: 8))
                         .disabled(!isTrailingActionEnabled)
                         .frame(minHeight: 44)
                 }

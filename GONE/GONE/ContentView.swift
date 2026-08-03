@@ -11,18 +11,33 @@ struct ContentView: View {
     @State private var isShowingSignup = false
 
     var body: some View {
-        Group {
+        ZStack {
             if isShowingSignup {
                 SignupView {
-                    isShowingSignup = false
+                    withAnimation(.snappy(duration: 0.32)) {
+                        isShowingSignup = false
+                    }
                 }
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    )
+                )
             } else {
                 LoginView(onSignUpTapped: {
-                    isShowingSignup = true
+                    withAnimation(.snappy(duration: 0.32)) {
+                        isShowingSignup = true
+                    }
                 })
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    )
+                )
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: isShowingSignup)
     }
 }
 

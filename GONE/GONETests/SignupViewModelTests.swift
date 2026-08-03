@@ -26,15 +26,27 @@ final class SignupViewModelTests: XCTestCase {
         viewModel.password = "password"
         viewModel.passwordConfirmation = "different"
 
+        XCTAssertFalse(viewModel.isPrimaryActionEnabled)
+
         viewModel.proceed()
 
         XCTAssertEqual(viewModel.currentStep, .password)
         XCTAssertEqual(viewModel.confirmationErrorMessage, "비밀번호가 일치하지 않습니다.")
     }
 
+    func testPasswordStepEnablesActionOnlyWhenConfirmationMatches() {
+        let viewModel = SignupViewModel()
+        viewModel.identifier = "goneUser"
+        viewModel.proceed()
+        viewModel.password = "password"
+        viewModel.passwordConfirmation = "password"
+
+        XCTAssertTrue(viewModel.isPrimaryActionEnabled)
+    }
+
     func testPhoneNumberIsFormattedAndEnablesVerificationRequest() {
         let viewModel = SignupViewModel()
-        viewModel.phoneNumber = "01012345678"
+        viewModel.updatePhoneNumber("01012345678")
 
         XCTAssertEqual(viewModel.phoneNumber, "010-1234-5678")
         XCTAssertTrue(viewModel.isVerificationRequestEnabled)

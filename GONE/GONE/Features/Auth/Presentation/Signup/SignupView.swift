@@ -30,6 +30,13 @@ struct SignupView: View {
 
                 inputFields
                     .padding(.top, 34)
+                    .id(viewModel.currentStep)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        )
+                    )
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.bottom, GONESpacing.section)
@@ -41,7 +48,7 @@ struct SignupView: View {
                 title: viewModel.currentStep.actionTitle,
                 isEnabled: viewModel.isPrimaryActionEnabled,
                 isLoading: false,
-                action: viewModel.proceed
+                action: handlePrimaryAction
             )
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.small)
@@ -55,9 +62,10 @@ struct SignupView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.goneTextPrimary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
             }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
             .accessibilityLabel("뒤로가기")
 
             Spacer()
@@ -141,7 +149,7 @@ struct SignupView: View {
                 GONEUnderlinedTextField(
                     title: "전화번호",
                     placeholder: "010-0000-0000",
-                    text: $viewModel.phoneNumber,
+                text: phoneNumberBinding,
                     textContentType: .telephoneNumber,
                     keyboardType: .phonePad,
                     errorMessage: viewModel.phoneErrorMessage,
@@ -173,7 +181,22 @@ struct SignupView: View {
         if viewModel.currentStep == .identifier {
             onDismiss()
         } else {
-            viewModel.goBack()
+            withAnimation(.snappy(duration: 0.28)) {
+                viewModel.goBack()
+            }
+        }
+    }
+
+    private var phoneNumberBinding: Binding<String> {
+        Binding(
+            get: { viewModel.phoneNumber },
+            set: { viewModel.updatePhoneNumber($0) }
+        )
+    }
+
+    private func handlePrimaryAction() {
+        withAnimation(.snappy(duration: 0.28)) {
+            viewModel.proceed()
         }
     }
 }

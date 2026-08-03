@@ -55,12 +55,7 @@ final class SignupViewModel: ObservableObject {
     @Published var passwordConfirmation = "" {
         didSet { confirmationErrorMessage = nil }
     }
-    @Published var phoneNumber = "" {
-        didSet {
-            phoneNumber = Self.formattedPhoneNumber(phoneNumber)
-            phoneErrorMessage = nil
-        }
-    }
+    @Published var phoneNumber = ""
     @Published var verificationCode = "" {
         didSet { verificationErrorMessage = nil }
     }
@@ -78,7 +73,7 @@ final class SignupViewModel: ObservableObject {
         case .identifier:
             !trimmedIdentifier.isEmpty
         case .password:
-            !password.isEmpty && !passwordConfirmation.isEmpty
+            !password.isEmpty && password == passwordConfirmation
         case .phoneVerification:
             isValidPhoneNumber && !verificationCode.isEmpty
         }
@@ -120,6 +115,11 @@ final class SignupViewModel: ObservableObject {
         isVerificationRequested = true
         verificationErrorMessage = nil
         serviceErrorMessage = "인증번호 발송 API 연결 정보를 확인 중입니다."
+    }
+
+    func updatePhoneNumber(_ value: String) {
+        phoneNumber = Self.formattedPhoneNumber(value)
+        phoneErrorMessage = nil
     }
 
     private var trimmedIdentifier: String {
