@@ -16,7 +16,6 @@ doc/
 │   ├── plans/
 │   ├── issues/
 │   └── reports/
-└── be/
 ```
 
 ## 문서 작성 순서

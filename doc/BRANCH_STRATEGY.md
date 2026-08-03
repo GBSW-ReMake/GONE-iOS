@@ -34,5 +34,7 @@ hotfix-로그인-차단
 
 - `feat/* → dev`: QA 및 개발자 리뷰 후 Squash merge 권장
 - `fix/* → dev`: QA 재검증 및 개발자 리뷰 후 병합
-- `dev → main`: 릴리즈 단위로만 Merge commit
+- `dev → main`: 모든 기능 개발과 통합 QA가 끝난 최종 릴리즈 단위로만 Merge commit
 - `hotfix/* → main`: 긴급 수정 후 동일 변경을 `dev`에도 반영
+
+> **중요:** 기능 개발 중에는 `main` PR을 만들지 않습니다. `main` PR은 개발자가 명시적으로 최종 릴리즈를 요청했을 때만 생성합니다.
