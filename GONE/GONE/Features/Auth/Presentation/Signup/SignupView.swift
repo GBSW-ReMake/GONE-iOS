@@ -62,10 +62,14 @@ struct SignupView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.goneTextPrimary)
+                    .frame(width: 44, height: 44)
             }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
-            .controlSize(.large)
+            .background(Color.white.opacity(0.82), in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(Color.white.opacity(0.7), lineWidth: 1)
+            }
+            .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
             .accessibilityLabel("뒤로가기")
 
             Spacer()
