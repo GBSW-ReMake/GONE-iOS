@@ -47,7 +47,7 @@ struct GONEUnderlinedTextField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(GONEFont.sfPro(size: 14, weight: .medium))
+                .font(GONEFont.sfPro(size: 13, weight: .medium))
                 .foregroundStyle(Color.goneTextSecondary)
 
             Group {
@@ -57,7 +57,7 @@ struct GONEUnderlinedTextField: View {
                     TextField(placeholder, text: $text)
                 }
             }
-            .font(GONEFont.sfPro(size: 18))
+            .font(GONEFont.sfPro(size: 17))
             .foregroundStyle(Color.goneTextPrimary)
             .textContentType(textContentType)
             .keyboardType(keyboardType)
@@ -74,7 +74,7 @@ struct GONEUnderlinedTextField: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(GONEFont.sfPro(size: 14))
+                    .font(GONEFont.sfPro(size: 13))
                     .foregroundStyle(Color.goneStatusError)
                     .accessibilityLabel("오류: \(errorMessage)")
             }

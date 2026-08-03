@@ -21,7 +21,7 @@ struct GONEPrimaryButton: View {
                         .tint(.white)
                 } else {
                     Text(title)
-                        .font(GONEFont.sfPro(size: 18, weight: .semibold))
+                        .font(GONEFont.sfPro(size: 17, weight: .semibold))
                 }
             }
             .frame(maxWidth: .infinity)

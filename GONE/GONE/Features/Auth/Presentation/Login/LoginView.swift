@@ -61,18 +61,18 @@ struct LoginView: View {
             Text("ONE")
                 .foregroundStyle(Color.goneTextPrimary)
         }
-        .font(GONEFont.sfPro(size: 30, weight: .bold))
+        .font(GONEFont.sfPro(size: 29, weight: .bold))
         .accessibilityLabel("GONE")
     }
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             Text("학교생활을 더 간편하게")
-                .font(GONEFont.sfPro(size: 24, weight: .bold))
+                .font(GONEFont.sfPro(size: 23, weight: .bold))
                 .foregroundStyle(Color.goneTextPrimary)
 
             Text("GONE에 로그인하고 학교의 서비스를\n한곳에서 이용해보세요.")
-                .font(GONEFont.sfPro(size: 16))
+                .font(GONEFont.sfPro(size: 15))
                 .foregroundStyle(Color.goneTextSecondary)
                 .lineSpacing(3)
         }
@@ -99,7 +99,7 @@ struct LoginView: View {
 
             if let loginErrorMessage = viewModel.loginErrorMessage {
                 Text(loginErrorMessage)
-                    .font(GONEFont.sfPro(size: 16))
+                    .font(GONEFont.sfPro(size: 15))
                     .foregroundStyle(Color.goneStatusError)
                     .accessibilityLabel("로그인 오류: \(loginErrorMessage)")
             }
@@ -118,7 +118,7 @@ struct LoginView: View {
                 .contentShape(Rectangle())
                 .accessibilityHint("회원가입 화면으로 이동합니다.")
         }
-        .font(GONEFont.sfPro(size: 15))
+        .font(GONEFont.sfPro(size: 14))
         .frame(maxWidth: .infinity)
     }
 
