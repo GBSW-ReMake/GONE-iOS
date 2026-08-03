@@ -83,11 +83,11 @@ struct SignupView: View {
     }
 
     private var goneLogo: some View {
-        HStack(spacing: 0) {
-            Text("G").foregroundStyle(Color.goneBrandPrimary)
-            Text("ONE").foregroundStyle(Color.goneTextPrimary)
-        }
-        .font(GONEFont.sfPro(size: 29, weight: .bold))
+        Image("GONELogo")
+            .resizable()
+            .scaledToFill()
+            .frame(width: 230, height: 54)
+            .clipped()
         .accessibilityLabel("GONE")
     }
 
