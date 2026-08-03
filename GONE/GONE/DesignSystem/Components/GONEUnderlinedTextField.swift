@@ -52,9 +52,17 @@ struct GONEUnderlinedTextField: View {
 
             Group {
                 if isSecure {
-                    SecureField(placeholder, text: $text)
+                    SecureField(
+                        "",
+                        text: $text,
+                        prompt: Text(placeholder).foregroundStyle(Color.goneTextTertiary)
+                    )
                 } else {
-                    TextField(placeholder, text: $text)
+                    TextField(
+                        "",
+                        text: $text,
+                        prompt: Text(placeholder).foregroundStyle(Color.goneTextTertiary)
+                    )
                 }
             }
             .font(GONEFont.sfPro(size: 17))
