@@ -289,7 +289,7 @@ private struct LabReservationDetailView: View {
                     HStack {
                         Text("이용시간").foregroundStyle(Color.goneTextSecondary)
                         Spacer()
-                        Text(reservation.usageTime).font(.headline.weight(.bold))
+                        Text(reservation.usageTime).font(.subheadline.weight(.bold))
                     }
                     ReservationInfoRow(title: "대표자", value: reservation.representative)
                     ReservationInfoRow(title: "사용인원", value: "\(reservation.memberCount)명")
