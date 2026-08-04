@@ -8,35 +8,36 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var isShowingSignup = false
+    private enum Destination {
+        case login
+        case signup
+        case home
+    }
+
+    @State private var destination: Destination = .login
 
     var body: some View {
         ZStack {
-            if isShowingSignup {
-                SignupView {
-                    withAnimation(.snappy(duration: 0.32)) {
-                        isShowingSignup = false
-                    }
-                }
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .trailing).combined(with: .opacity)
-                    )
+            switch destination {
+            case .login:
+                LoginView(
+                    onLogin: { _ in transition(to: .home) },
+                    onSignUpTapped: { transition(to: .signup) }
                 )
-            } else {
-                LoginView(onSignUpTapped: {
-                    withAnimation(.snappy(duration: 0.32)) {
-                        isShowingSignup = true
-                    }
-                })
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .leading).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    )
-                )
+                .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
+            case .signup:
+                SignupView(onDismiss: { transition(to: .login) })
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity)))
+            case .home:
+                AppTabView()
+                    .transition(.opacity)
             }
+        }
+    }
+
+    private func transition(to destination: Destination) {
+        withAnimation(.snappy(duration: 0.32)) {
+            self.destination = destination
         }
     }
 }
