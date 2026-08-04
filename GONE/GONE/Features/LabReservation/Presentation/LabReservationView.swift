@@ -289,7 +289,7 @@ private struct LabReservationDetailView: View {
                     HStack {
                         Text("이용시간").foregroundStyle(Color.goneTextSecondary)
                         Spacer()
-                        Text(reservation.usageTime).font(.title3.weight(.bold))
+                        Text(reservation.usageTime).font(.headline.weight(.bold))
                     }
                     ReservationInfoRow(title: "대표자", value: reservation.representative)
                     ReservationInfoRow(title: "사용인원", value: "\(reservation.memberCount)명")
@@ -300,7 +300,7 @@ private struct LabReservationDetailView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.goneStatusError)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 48)
+                        .frame(height: 44)
                         .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneStatusError))
                 }
                 .padding(GONESpacing.large)
