@@ -78,7 +78,7 @@ private struct ProfileSummaryCard: View {
                     ScoreView(title: "현재 점수", value: "+\(profile.totalPoints)점", color: .goneTextPrimary)
                 }
                 Divider()
-                HStack(alignment: .center, spacing: GONESpacing.small) {
+                HStack(alignment: .center, spacing: GONESpacing.medium) {
                     Text("내 역할")
                         .font(.footnote)
                         .foregroundStyle(Color.goneTextSecondary)
@@ -96,7 +96,11 @@ private struct ProfileSummaryCard: View {
     }
 
     private func roleForegroundColor(at index: Int) -> Color {
-        index == 0 ? Color(red: 42 / 255, green: 100 / 255, blue: 73 / 255) : Color.goneTextPrimary
+        switch index {
+        case 0: Color(red: 42 / 255, green: 100 / 255, blue: 73 / 255)
+        case 1: Color(red: 58 / 255, green: 93 / 255, blue: 147 / 255)
+        default: Color(red: 89 / 255, green: 99 / 255, blue: 94 / 255)
+        }
     }
 
     private func roleBackgroundColor(at index: Int) -> Color {
@@ -138,6 +142,7 @@ private struct TodayScheduleCard: View {
 private struct SchedulePager: View {
     let schedule: [ClassSchedule]
     @State private var selectedPeriod = 0
+    @State private var movesForward = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
@@ -172,7 +177,7 @@ private struct SchedulePager: View {
                     }
                     .accessibilityElement(children: .combine)
                     .id(selectedPeriod)
-                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
+                    .transition(cardTransition)
                     .highPriorityGesture(horizontalPagingGesture)
                 }
             }
@@ -184,11 +189,19 @@ private struct SchedulePager: View {
     private var horizontalPagingGesture: some Gesture {
         DragGesture(minimumDistance: 24).onEnded { value in
             if value.translation.width < -30, selectedPeriod < schedule.count - 1 {
+                movesForward = true
                 withAnimation(.snappy) { selectedPeriod += 1 }
             } else if value.translation.width > 30, selectedPeriod > 0 {
+                movesForward = false
                 withAnimation(.snappy) { selectedPeriod -= 1 }
             }
         }
+    }
+
+    private var cardTransition: AnyTransition {
+        movesForward
+            ? .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity))
+            : .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity))
     }
 
     private func nextLabel(after index: Int) -> String { index == schedule.count - 1 ? "마지막" : "다음" }
@@ -199,6 +212,7 @@ private struct SchedulePager: View {
 private struct MealPager: View {
     let meals: [Meal]
     @State private var selectedMeal = 0
+    @State private var movesForward = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
@@ -210,7 +224,7 @@ private struct MealPager: View {
             if !meals.isEmpty {
                 mealCard(meals[selectedMeal])
                     .id(selectedMeal)
-                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
+                    .transition(cardTransition)
             }
         }
         .animation(.snappy(duration: 0.28), value: selectedMeal)
@@ -236,11 +250,19 @@ private struct MealPager: View {
         }
         .highPriorityGesture(DragGesture(minimumDistance: 24).onEnded { value in
             if value.translation.width < -30, selectedMeal < meals.count - 1 {
+                movesForward = true
                 withAnimation(.snappy) { selectedMeal += 1 }
             } else if value.translation.width > 30, selectedMeal > 0 {
+                movesForward = false
                 withAnimation(.snappy) { selectedMeal -= 1 }
             }
         })
+    }
+
+    private var cardTransition: AnyTransition {
+        movesForward
+            ? .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity))
+            : .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity))
     }
 }
 
