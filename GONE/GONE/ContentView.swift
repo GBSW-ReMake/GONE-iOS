@@ -8,8 +8,37 @@
 import SwiftUI
 
 struct ContentView: View {
+    private enum Destination {
+        case login
+        case signup
+        case home
+    }
+
+    @State private var destination: Destination = .login
+
     var body: some View {
-        AppTabView()
+        ZStack {
+            switch destination {
+            case .login:
+                LoginView(
+                    onLogin: { _ in transition(to: .home) },
+                    onSignUpTapped: { transition(to: .signup) }
+                )
+                .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
+            case .signup:
+                SignupView(onDismiss: { transition(to: .login) })
+                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity)))
+            case .home:
+                AppTabView()
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    private func transition(to destination: Destination) {
+        withAnimation(.snappy(duration: 0.32)) {
+            self.destination = destination
+        }
     }
 }
 
