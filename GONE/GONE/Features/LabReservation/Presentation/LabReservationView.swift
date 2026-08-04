@@ -297,10 +297,10 @@ private struct LabReservationDetailView: View {
                     ReservationProgress(status: reservation.status)
 
                     Button("대여 취소") {}
-                        .font(.subheadline.weight(.semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(Color.goneStatusError)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 44)
+                        .frame(height: 48)
                         .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneStatusError))
                 }
                 .padding(GONESpacing.large)
