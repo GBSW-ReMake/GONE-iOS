@@ -77,15 +77,32 @@ private struct ProfileSummaryCard: View {
                     ScoreView(title: "현재 점수", value: "+\(profile.totalPoints)점", color: .goneTextPrimary)
                 }
                 Divider()
-                VStack(alignment: .leading, spacing: GONESpacing.small) {
+                HStack(alignment: .center, spacing: GONESpacing.small) {
                     Text("내 역할")
-                        .font(.caption)
+                        .font(.footnote)
                         .foregroundStyle(Color.goneTextSecondary)
-                    Text(profile.roles.joined(separator: " · "))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.goneTextPrimary)
+                    ForEach(Array(profile.roles.enumerated()), id: \.offset) { index, role in
+                        Text(role)
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(roleForegroundColor(at: index))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(roleBackgroundColor(at: index), in: RoundedRectangle(cornerRadius: 10))
+                    }
                 }
             }
+        }
+    }
+
+    private func roleForegroundColor(at index: Int) -> Color {
+        index == 0 ? Color(red: 42 / 255, green: 100 / 255, blue: 73 / 255) : Color.goneTextPrimary
+    }
+
+    private func roleBackgroundColor(at index: Int) -> Color {
+        switch index {
+        case 0: Color(red: 229 / 255, green: 240 / 255, blue: 234 / 255)
+        case 1: Color(red: 230 / 255, green: 237 / 255, blue: 249 / 255)
+        default: Color(red: 241 / 255, green: 243 / 255, blue: 245 / 255)
         }
     }
 }
@@ -125,8 +142,14 @@ private struct SchedulePager: View {
     @State private var selectedPeriod = 0
 
     var body: some View {
-        TabView(selection: $selectedPeriod) {
-            ForEach(Array(schedule.enumerated()), id: \.element.id) { index, item in
+        VStack(alignment: .leading, spacing: GONESpacing.small) {
+            HStack {
+                Text("오늘 시간표").font(.headline).foregroundStyle(Color.goneTextPrimary)
+                Spacer()
+                Text("\(selectedPeriod + 1) / \(schedule.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
+            }
+            if !schedule.isEmpty {
+                let item = schedule[selectedPeriod]
                 HomeCard {
                     VStack(spacing: GONESpacing.large) {
                         HStack(spacing: GONESpacing.large) {
@@ -143,20 +166,28 @@ private struct SchedulePager: View {
                         }
                         Divider()
                         HStack {
-                            Text(nextLabel(after: index)).font(.caption).foregroundStyle(Color.goneTextSecondary)
-                            Text(nextTitle(after: index)).font(.caption.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
+                            Text(nextLabel(after: selectedPeriod)).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                            Text(nextTitle(after: selectedPeriod)).font(.caption.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                             Spacer()
-                            Text(nextLocation(after: index)).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                            Text(nextLocation(after: selectedPeriod)).font(.caption).foregroundStyle(Color.goneTextSecondary)
                         }
                     }
                     .accessibilityElement(children: .combine)
+                    .gesture(verticalPagingGesture)
                 }
-                .tag(index)
             }
         }
-        .frame(height: 142)
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .accessibilityLabel("오늘 시간표. 좌우로 넘겨 다음 교시를 확인하세요.")
+        .accessibilityLabel("오늘 시간표. 위로 넘겨 다음 교시를 확인하세요.")
+    }
+
+    private var verticalPagingGesture: some Gesture {
+        DragGesture(minimumDistance: 24).onEnded { value in
+            if value.translation.height < -30, selectedPeriod < schedule.count - 1 {
+                withAnimation(.snappy) { selectedPeriod += 1 }
+            } else if value.translation.height > 30, selectedPeriod > 0 {
+                withAnimation(.snappy) { selectedPeriod -= 1 }
+            }
+        }
     }
 
     private func nextLabel(after index: Int) -> String { index == schedule.count - 1 ? "마지막" : "다음" }
@@ -221,6 +252,9 @@ private struct RequestStatusSection: View {
                         Text(request.status.rawValue)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(statusColor(for: request.status))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(statusBackgroundColor(for: request.status), in: Capsule())
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(Color.goneTextSecondary)
@@ -235,6 +269,13 @@ private struct RequestStatusSection: View {
         switch status {
         case .completed, .reserved: .goneBrandPrimary
         case .pending: .orange
+        }
+    }
+
+    private func statusBackgroundColor(for status: DashboardRequest.Status) -> Color {
+        switch status {
+        case .completed, .reserved: Color.goneBrandPrimary.opacity(0.12)
+        case .pending: Color.orange.opacity(0.14)
         }
     }
 }
