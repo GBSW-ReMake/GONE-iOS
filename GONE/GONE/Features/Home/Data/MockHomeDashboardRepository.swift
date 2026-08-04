@@ -20,7 +20,13 @@ struct MockHomeDashboardRepository: HomeDashboardRepository {
                 ClassSchedule(period: 6, subject: "웹 프로그래밍", location: "웹 개발실", time: "14:30–15:20"),
                 ClassSchedule(period: 7, subject: "동아리 활동", location: "iOS실", time: "15:30–16:20")
             ],
-            meal: Meal(calories: "785 kcal", title: "오늘의 급식", menu: ["점심", "12:20–13:20"]),
+            meal: Meal(
+                calories: "785 kcal",
+                title: "오늘의 급식",
+                servingTime: "12:20–13:20",
+                leftMenu: ["현미밥", "쇠고기미역국 (5.6.16)", "돼지갈비찜 (5.6.10.13)", "깻잎양념무침 (5.6.13)"],
+                rightMenu: ["쌈배추무생채(해고) (5.6.13)", "잡채 (5.6.13.16.18)", "배추김치 (9)", "미숫가루수박화채 (2.5.13)"]
+            ),
             requests: [
                 DashboardRequest(kind: .lab, detail: "오늘 19:00–21:00 iOS실", status: .completed),
                 DashboardRequest(kind: .outing, detail: "7월 22일 · 병원 방문", status: .pending),

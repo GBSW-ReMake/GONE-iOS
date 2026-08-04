@@ -114,50 +114,88 @@ private struct TodayScheduleCard: View {
             Text("학교생활")
                 .font(.headline)
                 .foregroundStyle(Color.goneTextPrimary)
-            HomeCard {
-                VStack(spacing: 0) {
-                    ForEach(schedule) { item in
-                        ScheduleRow(item: item)
-                        if item.id != schedule.last?.id { Divider() }
+            SchedulePager(schedule: schedule)
+            MealCard(meal: meal)
+        }
+    }
+}
+
+private struct SchedulePager: View {
+    let schedule: [ClassSchedule]
+    @State private var selectedPeriod = 0
+
+    var body: some View {
+        TabView(selection: $selectedPeriod) {
+            ForEach(Array(schedule.enumerated()), id: \.element.id) { index, item in
+                HomeCard {
+                    VStack(spacing: GONESpacing.large) {
+                        HStack(spacing: GONESpacing.large) {
+                            Text("\(item.period)")
+                                .font(.system(size: 30, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.goneBrandPrimary)
+                                .frame(width: 28)
+                            VStack(alignment: .leading, spacing: GONESpacing.xSmall) {
+                                Text(item.subject).font(.headline).foregroundStyle(Color.goneTextPrimary)
+                                Text(item.location).font(.subheadline).foregroundStyle(Color.goneTextSecondary)
+                            }
+                            Spacer()
+                            Text(item.time).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                        }
+                        Divider()
+                        HStack {
+                            Text(nextLabel(after: index)).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                            Text(nextTitle(after: index)).font(.caption.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
+                            Spacer()
+                            Text(nextLocation(after: index)).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                        }
                     }
+                    .accessibilityElement(children: .combine)
                 }
+                .tag(index)
             }
-            HomeCard {
-                HStack(spacing: GONESpacing.medium) {
-                    Image(systemName: "fork.knife")
-                        .font(.title3)
-                        .foregroundStyle(Color.goneBrandPrimary)
+        }
+        .frame(height: 142)
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .accessibilityLabel("오늘 시간표. 좌우로 넘겨 다음 교시를 확인하세요.")
+    }
+
+    private func nextLabel(after index: Int) -> String { index == schedule.count - 1 ? "마지막" : "다음" }
+    private func nextTitle(after index: Int) -> String { index == schedule.count - 1 ? "오늘 수업 종료" : "\(schedule[index + 1].period)교시 · \(schedule[index + 1].subject)" }
+    private func nextLocation(after index: Int) -> String { index == schedule.count - 1 ? "수고했어요" : schedule[index + 1].location }
+}
+
+private struct MealCard: View {
+    let meal: Meal
+
+    var body: some View {
+        HomeCard {
+            VStack(alignment: .leading, spacing: GONESpacing.medium) {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: GONESpacing.xSmall) {
-                        Text(meal.title).font(.headline).foregroundStyle(Color.goneTextPrimary)
-                        Text(meal.menu.joined(separator: " · "))
-                            .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
+                        Text(meal.title).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                        Text("점심").font(.title3.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
                     }
                     Spacer()
-                    Text(meal.calories).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                    Text(meal.servingTime).font(.caption).foregroundStyle(Color.goneTextSecondary)
                 }
+                HStack(alignment: .top, spacing: GONESpacing.xLarge) {
+                    MealMenuColumn(items: meal.leftMenu)
+                    MealMenuColumn(items: meal.rightMenu)
+                }
+                Text(meal.calories).font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
         }
     }
 }
 
-private struct ScheduleRow: View {
-    let item: ClassSchedule
+private struct MealMenuColumn: View {
+    let items: [String]
 
     var body: some View {
-        HStack(spacing: GONESpacing.medium) {
-            Text("\(item.period)교시")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.goneBrandPrimary)
-                .frame(width: 36, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.subject).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
-                Text("⌖ \(item.location) · \(item.time)")
-                    .font(.caption).foregroundStyle(Color.goneTextSecondary)
-            }
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(items, id: \.self) { Text($0).font(.footnote).foregroundStyle(Color.goneTextPrimary) }
         }
-        .padding(.vertical, GONESpacing.medium)
-        .accessibilityElement(children: .combine)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -173,7 +211,7 @@ private struct RequestStatusSection: View {
                         Image(request.kind.illustrationAssetName)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 52, height: 52)
+                            .frame(width: 34, height: 34)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(request.kind.rawValue).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
@@ -183,6 +221,9 @@ private struct RequestStatusSection: View {
                         Text(request.status.rawValue)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(statusColor(for: request.status))
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.goneTextSecondary)
                     }
                     .accessibilityElement(children: .combine)
                 }

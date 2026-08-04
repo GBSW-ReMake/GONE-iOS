@@ -32,7 +32,7 @@ final class HomeViewModelTests: XCTestCase {
         HomeDashboard(
             profile: StudentProfile(name: "김은찬", department: "소프트웨어개발과", studentInfo: "2학년 2반 · 6번", rewardPoints: 15, penaltyPoints: 3, roles: []),
             schedule: [ClassSchedule(period: 1, subject: "자료구조", location: "소프트웨어 1실", time: "08:40–09:30")],
-            meal: Meal(calories: "785 kcal", title: "오늘의 급식", menu: []),
+            meal: Meal(calories: "785 kcal", title: "오늘의 급식", servingTime: "12:20–13:20", leftMenu: [], rightMenu: []),
             requests: []
         )
     }

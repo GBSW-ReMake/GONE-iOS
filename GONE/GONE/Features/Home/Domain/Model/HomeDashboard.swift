@@ -29,7 +29,9 @@ struct ClassSchedule: Identifiable, Equatable {
 struct Meal: Equatable {
     let calories: String
     let title: String
-    let menu: [String]
+    let servingTime: String
+    let leftMenu: [String]
+    let rightMenu: [String]
 }
 
 struct DashboardRequest: Identifiable, Equatable {
