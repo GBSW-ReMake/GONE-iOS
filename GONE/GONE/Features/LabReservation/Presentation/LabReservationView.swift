@@ -287,7 +287,9 @@ private struct LabReservationDetailView: View {
                         .foregroundStyle(Color.goneTextSecondary)
 
                     HStack {
-                        Text("이용시간").foregroundStyle(Color.goneTextSecondary)
+                        Text("이용시간")
+                            .font(.footnote)
+                            .foregroundStyle(Color.goneTextSecondary)
                         Spacer()
                         Text(reservation.usageTime).font(.subheadline.weight(.bold))
                     }
