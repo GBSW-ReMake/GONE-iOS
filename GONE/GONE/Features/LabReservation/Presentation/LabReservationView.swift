@@ -143,8 +143,8 @@ private struct LabRoomRow: View {
                     )
             }
             .padding(.horizontal, GONESpacing.large)
-            .padding(.vertical, 18)
-            .frame(minHeight: 88)
+            .padding(.vertical, 14)
+            .frame(minHeight: 80)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
             .overlay(
@@ -159,9 +159,14 @@ private struct LabRoomRow: View {
 }
 
 private struct LabReservationFormView: View {
+    private enum FocusedField: Hashable {
+        case representative, members, purpose
+    }
+
     let room: LabRoom
     let submit: (LabReservationDraft) async -> Void
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedField: FocusedField?
     @State private var representative = ""
     @State private var members = ""
     @State private var purpose = ""
@@ -190,14 +195,17 @@ private struct LabReservationFormView: View {
                 InputSection(title: "대표자") {
                     TextField("대표자 이름", text: $representative)
                         .textInputAutocapitalization(.never)
+                        .focused($focusedField, equals: .representative)
                 }
                 InputSection(title: "사용 인원 명단", helper: "본인 포함 · 쉼표(,)로 구분해 입력해 주세요.") {
                     TextEditor(text: $members)
                         .frame(minHeight: 116)
+                        .focused($focusedField, equals: .members)
                 }
                 InputSection(title: "사용 목적") {
                     TextEditor(text: $purpose)
                         .frame(minHeight: 144)
+                        .focused($focusedField, equals: .purpose)
                 }
 
                 GONEPrimaryButton(title: "대여 신청하기", isEnabled: draft.isValid, isLoading: isSubmitting) {
@@ -212,6 +220,10 @@ private struct LabReservationFormView: View {
             .padding(.vertical, GONESpacing.xLarge)
         }
         .background(Color.goneHomeBackground.ignoresSafeArea())
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField = nil
+        }
         .navigationTitle("실습실 대여")
         .navigationBarTitleDisplayMode(.inline)
     }
