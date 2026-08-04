@@ -10,23 +10,23 @@ struct AppTabView: View {
     var body: some View {
         TabView(selection: $selection) {
             HomeView(viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())))
-                .tabItem { Label("홈", systemImage: "house.fill") }
+                .tabItem { Label("홈", image: "HomeTabIcon") }
                 .tag(AppTab.home)
 
             TabPlaceholderView(title: "실습실", systemImage: "desktopcomputer")
-                .tabItem { Label("실습실", systemImage: "desktopcomputer") }
+                .tabItem { Label("실습실", image: "LabTabIcon") }
                 .tag(AppTab.lab)
 
             TabPlaceholderView(title: "외출", systemImage: "figure.walk")
-                .tabItem { Label("외출", systemImage: "figure.walk") }
+                .tabItem { Label("외출", image: "OutingTabIcon") }
                 .tag(AppTab.outing)
 
             TabPlaceholderView(title: "스쿨캠핑", systemImage: "tent")
-                .tabItem { Label("스쿨캠핑", systemImage: "tent") }
+                .tabItem { Label("스쿨캠핑", image: "CampingTabIcon") }
                 .tag(AppTab.schoolCamping)
 
             TabPlaceholderView(title: "설정", systemImage: "gearshape.fill")
-                .tabItem { Label("설정", systemImage: "gearshape.fill") }
+                .tabItem { Label("설정", image: "SettingsTabIcon") }
                 .tag(AppTab.settings)
         }
         .tint(.goneBrandPrimary)
