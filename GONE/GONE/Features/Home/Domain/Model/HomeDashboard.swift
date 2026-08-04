@@ -3,7 +3,7 @@ import Foundation
 struct HomeDashboard: Equatable {
     let profile: StudentProfile
     let schedule: [ClassSchedule]
-    let meal: Meal
+    let meals: [Meal]
     let requests: [DashboardRequest]
 }
 
@@ -27,6 +27,7 @@ struct ClassSchedule: Identifiable, Equatable {
 }
 
 struct Meal: Equatable {
+    let mealName: String
     let calories: String
     let title: String
     let servingTime: String

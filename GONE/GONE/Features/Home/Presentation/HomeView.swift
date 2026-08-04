@@ -30,10 +30,10 @@ struct HomeView: View {
 
     private func dashboardContent(_ dashboard: HomeDashboard) -> some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: GONESpacing.large) {
+            LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 header(for: dashboard.profile)
                 ProfileSummaryCard(profile: dashboard.profile)
-                TodayScheduleCard(schedule: dashboard.schedule, meal: dashboard.meal)
+                TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 RequestStatusSection(requests: dashboard.requests)
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -49,9 +49,10 @@ struct HomeView: View {
                 .font(.caption.weight(.semibold))
                 .tracking(1.2)
                 .foregroundStyle(Color.goneTextSecondary)
-            Text("안녕하세요, \(profile.name)님")
+            (Text("안녕하세요, ").foregroundStyle(Color.goneTextPrimary)
+             + Text(profile.name).foregroundStyle(Color.goneBrandPrimary)
+             + Text("님").foregroundStyle(Color.goneTextPrimary))
                 .font(.title2.weight(.bold))
-                .foregroundStyle(Color.goneTextPrimary)
                 .accessibilityLabel("안녕하세요, \(profile.name)님")
         }
     }
@@ -124,15 +125,12 @@ private struct ScoreView: View {
 
 private struct TodayScheduleCard: View {
     let schedule: [ClassSchedule]
-    let meal: Meal
+    let meals: [Meal]
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
-            Text("학교생활")
-                .font(.headline)
-                .foregroundStyle(Color.goneTextPrimary)
             SchedulePager(schedule: schedule)
-            MealCard(meal: meal)
+            MealPager(meals: meals)
         }
     }
 }
@@ -173,7 +171,7 @@ private struct SchedulePager: View {
                         }
                     }
                     .accessibilityElement(children: .combine)
-                    .gesture(verticalPagingGesture)
+                    .highPriorityGesture(verticalPagingGesture)
                 }
             }
         }
@@ -195,16 +193,28 @@ private struct SchedulePager: View {
     private func nextLocation(after index: Int) -> String { index == schedule.count - 1 ? "수고했어요" : schedule[index + 1].location }
 }
 
-private struct MealCard: View {
-    let meal: Meal
+private struct MealPager: View {
+    let meals: [Meal]
+    @State private var selectedMeal = 0
 
     var body: some View {
+        VStack(alignment: .leading, spacing: GONESpacing.small) {
+            HStack {
+                Text("오늘 급식").font(.headline).foregroundStyle(Color.goneTextPrimary)
+                Spacer()
+                Text("\(selectedMeal + 1) / \(meals.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
+            }
+            if !meals.isEmpty { mealCard(meals[selectedMeal]) }
+        }
+    }
+
+    private func mealCard(_ meal: Meal) -> some View {
         HomeCard {
             VStack(alignment: .leading, spacing: GONESpacing.medium) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: GONESpacing.xSmall) {
                         Text(meal.title).font(.caption).foregroundStyle(Color.goneTextSecondary)
-                        Text("점심").font(.title3.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                        Text(meal.mealName).font(.title3.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
                     }
                     Spacer()
                     Text(meal.servingTime).font(.caption).foregroundStyle(Color.goneTextSecondary)
@@ -216,6 +226,13 @@ private struct MealCard: View {
                 Text(meal.calories).font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
         }
+        .highPriorityGesture(DragGesture(minimumDistance: 24).onEnded { value in
+            if value.translation.height < -30, selectedMeal < meals.count - 1 {
+                withAnimation(.snappy) { selectedMeal += 1 }
+            } else if value.translation.height > 30, selectedMeal > 0 {
+                withAnimation(.snappy) { selectedMeal -= 1 }
+            }
+        })
     }
 }
 
@@ -287,7 +304,7 @@ private struct HomeCard<Content: View>: View {
         content
             .padding(GONESpacing.large)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 12))
+            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
     }
 }
 
