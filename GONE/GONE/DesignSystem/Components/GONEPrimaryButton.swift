@@ -11,6 +11,7 @@ struct GONEPrimaryButton: View {
     let title: String
     let isEnabled: Bool
     let isLoading: Bool
+    var fontSize: CGFloat = 17
     let action: () -> Void
 
     var body: some View {
@@ -21,7 +22,7 @@ struct GONEPrimaryButton: View {
                         .tint(.white)
                 } else {
                     Text(title)
-                        .font(GONEFont.sfPro(size: 17, weight: .semibold))
+                        .font(GONEFont.sfPro(size: fontSize, weight: .semibold))
                 }
             }
             .frame(maxWidth: .infinity)

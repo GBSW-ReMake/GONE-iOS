@@ -73,6 +73,7 @@ private struct LabRoomListView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .frame(height: 48)
 
                 HStack {
                     Text("\(viewModel.selectedFloor.title) 실습실")
@@ -86,7 +87,7 @@ private struct LabRoomListView: View {
                 VStack(spacing: GONESpacing.medium) {
                     ForEach(Array(viewModel.rooms.enumerated()), id: \.element.id) { index, room in
                         LabRoomRow(room: room, number: index + 1, isSelected: viewModel.selectedRoom == room) {
-                            viewModel.selectedRoom = room
+                            viewModel.selectedRoom = viewModel.selectedRoom == room ? nil : room
                         }
                     }
                 }
@@ -94,7 +95,8 @@ private struct LabRoomListView: View {
                 GONEPrimaryButton(
                     title: viewModel.selectedRoom.map { "\($0.name) 예약하기" } ?? "실습실을 선택해 주세요",
                     isEnabled: viewModel.selectedRoom != nil,
-                    isLoading: false
+                    isLoading: false,
+                    fontSize: 15
                 ) {
                     isShowingForm = true
                 }
@@ -140,7 +142,9 @@ private struct LabRoomRow: View {
                         in: Capsule()
                     )
             }
-            .padding(GONESpacing.large)
+            .padding(.horizontal, GONESpacing.large)
+            .padding(.vertical, 18)
+            .frame(minHeight: 88)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
             .overlay(
@@ -189,11 +193,11 @@ private struct LabReservationFormView: View {
                 }
                 InputSection(title: "사용 인원 명단", helper: "본인 포함 · 쉼표(,)로 구분해 입력해 주세요.") {
                     TextEditor(text: $members)
-                        .frame(minHeight: 86)
+                        .frame(minHeight: 116)
                 }
                 InputSection(title: "사용 목적") {
                     TextEditor(text: $purpose)
-                        .frame(minHeight: 110)
+                        .frame(minHeight: 144)
                 }
 
                 GONEPrimaryButton(title: "대여 신청하기", isEnabled: draft.isValid, isLoading: isSubmitting) {
@@ -227,6 +231,7 @@ private struct InputSection<Content: View>: View {
                 }
             }
             content
+                .font(.subheadline)
                 .padding(GONESpacing.medium)
                 .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 13))
                 .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneBorderDefault))
@@ -294,6 +299,7 @@ private struct LabReservationDetailView: View {
                     .font(.caption)
                     .foregroundStyle(Color.goneTextSecondary)
                     .padding(GONESpacing.large)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneTextSecondary.opacity(0.55)))
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -309,12 +315,15 @@ private struct ReservationInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title).foregroundStyle(Color.goneTextSecondary)
+        HStack(alignment: .firstTextBaseline, spacing: GONESpacing.medium) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(Color.goneTextSecondary)
             Spacer()
-            Text(value).font(.subheadline.weight(.medium)).multilineTextAlignment(.trailing)
+            Text(value)
+                .font(.footnote.weight(.medium))
+                .multilineTextAlignment(.trailing)
         }
-        .font(.subheadline)
         .padding(.vertical, GONESpacing.small)
         .overlay(alignment: .bottom) { Divider() }
     }
@@ -324,21 +333,47 @@ private struct ReservationProgress: View {
     let status: LabReservation.Status
 
     var body: some View {
-        HStack {
-            progressItem("신청완료", isActive: true)
-            Rectangle().fill(Color.goneBorderDefault).frame(height: 1)
-            progressItem("승인대기", isActive: status == .pending || status == .approved)
-            Rectangle().fill(Color.goneBorderDefault).frame(height: 1)
-            progressItem("이용가능", isActive: status == .approved)
+        VStack(spacing: GONESpacing.small) {
+            GeometryReader { proxy in
+                ZStack(alignment: .top) {
+                    Rectangle()
+                        .fill(Color.goneTextTertiary)
+                        .frame(height: 2)
+                        .padding(.horizontal, 7)
+                        .padding(.top, 7)
+                    HStack {
+                        progressMarker(isActive: true)
+                        Spacer()
+                        progressMarker(isActive: status == .pending || status == .approved)
+                        Spacer()
+                        progressMarker(isActive: status == .approved)
+                    }
+                }
+                .frame(width: proxy.size.width)
+            }
+            .frame(height: 16)
+
+            HStack(spacing: 0) {
+                progressLabel("신청완료", isActive: true, alignment: .leading)
+                progressLabel("승인대기", isActive: status == .pending || status == .approved, alignment: .center)
+                progressLabel("이용가능", isActive: status == .approved, alignment: .trailing)
+            }
         }
         .padding(.vertical, GONESpacing.medium)
     }
 
-    private func progressItem(_ title: String, isActive: Bool) -> some View {
-        VStack(spacing: GONESpacing.xSmall) {
-            Circle().fill(isActive ? Color.goneBrandPrimary : Color.goneTextTertiary).frame(width: 12, height: 12)
-            Text(title).font(.caption2).foregroundStyle(isActive ? Color.goneBrandPrimary : Color.goneTextTertiary)
-        }
+    private func progressMarker(isActive: Bool) -> some View {
+        Circle()
+            .fill(isActive ? Color.goneBrandPrimary : Color(.systemBackground))
+            .frame(width: 16, height: 16)
+            .overlay(Circle().stroke(isActive ? Color.goneBrandPrimary : Color.goneTextTertiary, lineWidth: isActive ? 0 : 4))
+    }
+
+    private func progressLabel(_ title: String, isActive: Bool, alignment: Alignment) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(isActive ? Color.goneBrandPrimary : Color.goneTextTertiary)
+            .frame(maxWidth: .infinity, alignment: alignment)
     }
 }
 
