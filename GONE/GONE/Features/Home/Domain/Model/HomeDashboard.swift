@@ -47,6 +47,14 @@ struct DashboardRequest: Identifiable, Equatable {
             case .schoolCamping: "tent"
             }
         }
+
+        var illustrationAssetName: String {
+            switch self {
+            case .lab: "HomeLabIllustration"
+            case .outing: "HomeOutingIllustration"
+            case .schoolCamping: "HomeCampingIllustration"
+            }
+        }
     }
 
     enum Status: String, Equatable {

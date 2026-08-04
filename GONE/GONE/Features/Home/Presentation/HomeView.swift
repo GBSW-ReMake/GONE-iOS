@@ -170,10 +170,11 @@ private struct RequestStatusSection: View {
             ForEach(requests) { request in
                 HomeCard {
                     HStack(spacing: GONESpacing.medium) {
-                        Image(systemName: request.kind.systemImage)
-                            .font(.title3).foregroundStyle(Color.goneBrandPrimary)
-                            .frame(width: 36, height: 36)
-                            .background(Color.goneBrandPrimary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                        Image(request.kind.illustrationAssetName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 52, height: 52)
+                            .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(request.kind.rawValue).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                             Text(request.detail).font(.caption).foregroundStyle(Color.goneTextSecondary)
