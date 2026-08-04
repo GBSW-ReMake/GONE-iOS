@@ -6,14 +6,25 @@ enum AppTab: Hashable {
 
 struct AppTabView: View {
     @State private var selection: AppTab = .home
+    @StateObject private var labReservationViewModel: LabReservationViewModel
+
+    init() {
+        _labReservationViewModel = StateObject(
+            wrappedValue: LabReservationViewModel(repository: MockLabReservationRepository())
+        )
+    }
 
     var body: some View {
         TabView(selection: $selection) {
-            HomeView(viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())))
+            HomeView(
+                viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
+                labReservation: labReservationViewModel.reservation,
+                onLabRequestTap: { selection = .lab }
+            )
                 .tabItem { Label("홈", image: "HomeTabIcon") }
                 .tag(AppTab.home)
 
-            TabPlaceholderView(title: "실습실", systemImage: "desktopcomputer")
+            LabReservationView(viewModel: labReservationViewModel)
                 .tabItem { Label("실습실", image: "LabTabIcon") }
                 .tag(AppTab.lab)
 

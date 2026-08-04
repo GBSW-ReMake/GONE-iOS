@@ -2,9 +2,17 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
+    private let labReservation: LabReservation?
+    private let onLabRequestTap: () -> Void
 
-    init(viewModel: HomeViewModel) {
+    init(
+        viewModel: HomeViewModel,
+        labReservation: LabReservation? = nil,
+        onLabRequestTap: @escaping () -> Void = {}
+    ) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        self.labReservation = labReservation
+        self.onLabRequestTap = onLabRequestTap
     }
 
     var body: some View {
@@ -34,7 +42,11 @@ struct HomeView: View {
                 header(for: dashboard.profile)
                 ProfileSummaryCard(profile: dashboard.profile)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
-                RequestStatusSection(requests: dashboard.requests)
+                RequestStatusSection(
+                    requests: dashboard.requests,
+                    labReservation: labReservation,
+                    onLabRequestTap: onLabRequestTap
+                )
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -279,38 +291,59 @@ private struct MealMenuColumn: View {
 
 private struct RequestStatusSection: View {
     let requests: [DashboardRequest]
+    let labReservation: LabReservation?
+    let onLabRequestTap: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
             Text("신청현황").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
             ForEach(requests) { request in
-                HomeCard {
-                    HStack(spacing: GONESpacing.medium) {
-                        Image(request.kind.illustrationAssetName)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 34, height: 34)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(request.kind.rawValue).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
-                            Text(request.detail).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                let displayRequest = requestForDisplay(request)
+                Button {
+                    if request.kind == .lab { onLabRequestTap() }
+                } label: {
+                    HomeCard {
+                        HStack(spacing: GONESpacing.medium) {
+                            Image(request.kind.illustrationAssetName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 34, height: 34)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(request.kind.rawValue).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
+                                Text(displayRequest.detail).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                            }
+                            Spacer(minLength: 8)
+                            Text(displayRequest.status.rawValue)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(statusColor(for: displayRequest.status))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(statusBackgroundColor(for: displayRequest.status), in: Capsule())
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Color.goneTextSecondary)
                         }
-                        Spacer(minLength: 8)
-                        Text(request.status.rawValue)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(statusColor(for: request.status))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 8)
-                            .background(statusBackgroundColor(for: request.status), in: Capsule())
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Color.goneTextSecondary)
+                        .padding(.vertical, 4)
+                        .accessibilityElement(children: .combine)
                     }
-                    .padding(.vertical, 4)
-                    .accessibilityElement(children: .combine)
                 }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    private func requestForDisplay(_ request: DashboardRequest) -> (detail: String, status: DashboardRequest.Status) {
+        guard request.kind == .lab, let labReservation else {
+            return (request.detail, request.status)
+        }
+
+        let status: DashboardRequest.Status = switch labReservation.status {
+        case .submitted: .completed
+        case .pending: .pending
+        case .approved: .reserved
+        }
+        return ("\(labReservation.date) · \(labReservation.usageTime)", status)
     }
 
     private func statusColor(for status: DashboardRequest.Status) -> Color {

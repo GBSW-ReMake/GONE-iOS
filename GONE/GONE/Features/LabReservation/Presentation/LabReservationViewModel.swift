@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 @MainActor
 final class LabReservationViewModel: ObservableObject {
@@ -25,6 +26,20 @@ final class LabReservationViewModel: ObservableObject {
     }
 
     func selectFloor(_ floor: LabFloor) { selectedFloor = floor }
+
+    func loadRooms() async {
+        do {
+            rooms = try await repository.fetchRooms(for: selectedFloor)
+            selectedRoom = nil
+        } catch {
+            state = .failed
+        }
+    }
+
+    func startNewReservation() {
+        reservation = nil
+        selectedRoom = nil
+    }
 
     func submit(_ draft: LabReservationDraft) async {
         do { reservation = try await repository.submit(draft) } catch { state = .failed }
