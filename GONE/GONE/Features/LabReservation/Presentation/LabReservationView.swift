@@ -158,9 +158,9 @@ private struct LabReservationFormView: View {
     let room: LabRoom
     let submit: (LabReservationDraft) async -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var representative = "김은찬"
-    @State private var members = "3206김은찬, 3218정은경, 3211윤동은"
-    @State private var purpose = "캡스톤 프로젝트 진행 및 대회 준비"
+    @State private var representative = ""
+    @State private var members = ""
+    @State private var purpose = ""
     @State private var isSubmitting = false
 
     private var draft: LabReservationDraft {
