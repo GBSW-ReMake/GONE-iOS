@@ -3,7 +3,7 @@
 > **완료일**: 2026-08-05
 > **작업 번호**: #10
 > **관련 이슈**: [#10](https://github.com/GBSW-ReMake/GONE-iOS/issues/10)
-> **PR**: 생성 예정 (`dev` 대상)
+> **PR**: [#11](https://github.com/GBSW-ReMake/GONE-iOS/pull/11) (`dev` 대상)
 > **브랜치**: `feat/10-signup-profile`
 
 ---
@@ -56,8 +56,8 @@
 
 ## 다음 단계
 
-- 최신 `dev`에 포함된 실습실 예약 PR #9를 현재 브랜치에 반영한 뒤 `dev` 대상 PR을 생성합니다.
-- PR 리뷰에서 사진 라이브러리 권한·취소, 포커스 색상, Dynamic Type·다크 모드 수동 QA를 확인합니다.
+- 최신 `dev`에 포함된 실습실 예약 PR #9를 현재 브랜치에 반영하고 PR #11을 생성했습니다.
+- PR #11 리뷰에서 사진 라이브러리 권한·취소, 포커스 색상, Dynamic Type·다크 모드 수동 QA를 확인합니다.
 - API 계약 확정 후 `SignupDraft`와 Repository/UseCase에 학번·이름·프로필 이미지 업로드를 연결합니다.
 
 ---
