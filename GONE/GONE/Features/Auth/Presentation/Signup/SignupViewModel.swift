@@ -14,6 +14,8 @@ final class SignupViewModel: ObservableObject {
         case identifier
         case password
         case phoneVerification
+        case studentInformation
+        case profileImage
 
         var title: String {
             switch self {
@@ -23,6 +25,10 @@ final class SignupViewModel: ObservableObject {
                 "비밀번호를 설정해주세요"
             case .phoneVerification:
                 "전화번호를 입력해주세요"
+            case .studentInformation:
+                "학번 이름을 입력해주세요"
+            case .profileImage:
+                "프로필 사진을 설정해주세요"
             }
         }
 
@@ -34,11 +40,15 @@ final class SignupViewModel: ObservableObject {
                 "안전한 서비스 이용을 위해 비밀번호를 설정해주세요."
             case .phoneVerification:
                 "서비스 이용을 위해 전화번호 인증이 필요해요."
+            case .studentInformation:
+                "학번 이름을 입력해 주세요."
+            case .profileImage:
+                "나중에 언제든지 바꿀 수 있어요."
             }
         }
 
         var actionTitle: String {
-            self == .phoneVerification ? "가입 완료" : "다음"
+            self == .profileImage ? "시작하기" : "다음"
         }
     }
 
@@ -59,12 +69,22 @@ final class SignupViewModel: ObservableObject {
     @Published var verificationCode = "" {
         didSet { verificationErrorMessage = nil }
     }
+    @Published var studentNumber = "" {
+        didSet { studentNumberErrorMessage = nil }
+    }
+    @Published var name = "" {
+        didSet { nameErrorMessage = nil }
+    }
+    @Published private(set) var profileImageData: Data?
 
     @Published private(set) var identifierErrorMessage: String?
     @Published private(set) var passwordErrorMessage: String?
     @Published private(set) var confirmationErrorMessage: String?
     @Published private(set) var phoneErrorMessage: String?
     @Published private(set) var verificationErrorMessage: String?
+    @Published private(set) var studentNumberErrorMessage: String?
+    @Published private(set) var nameErrorMessage: String?
+    @Published private(set) var profileImageErrorMessage: String?
     @Published private(set) var serviceErrorMessage: String?
     @Published private(set) var isVerificationRequested = false
 
@@ -76,6 +96,10 @@ final class SignupViewModel: ObservableObject {
             !password.isEmpty && password == passwordConfirmation
         case .phoneVerification:
             isValidPhoneNumber && !verificationCode.isEmpty
+        case .studentInformation:
+            !trimmedStudentNumber.isEmpty && !trimmedName.isEmpty
+        case .profileImage:
+            true
         }
     }
 
@@ -99,6 +123,11 @@ final class SignupViewModel: ObservableObject {
             currentStep = .phoneVerification
         case .phoneVerification:
             guard validatePhoneVerification() else { return }
+            currentStep = .studentInformation
+        case .studentInformation:
+            guard validateStudentInformation() else { return }
+            currentStep = .profileImage
+        case .profileImage:
             serviceErrorMessage = "회원가입 서비스 연결 정보를 확인 중입니다. 잠시 후 다시 시도해주세요."
         }
     }
@@ -122,8 +151,25 @@ final class SignupViewModel: ObservableObject {
         phoneErrorMessage = nil
     }
 
+    func updateProfileImage(data: Data?) {
+        profileImageData = data
+        profileImageErrorMessage = nil
+    }
+
+    func reportProfileImageLoadingFailure() {
+        profileImageErrorMessage = "프로필 사진을 불러오지 못했어요. 사진 없이 계속할 수 있습니다."
+    }
+
     private var trimmedIdentifier: String {
         identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedStudentNumber: String {
+        studentNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var isValidPhoneNumber: Bool {
@@ -157,6 +203,13 @@ final class SignupViewModel: ObservableObject {
             ? "인증번호를 입력해주세요."
             : nil
         return verificationErrorMessage == nil
+    }
+
+    private func validateStudentInformation() -> Bool {
+        studentNumberErrorMessage = trimmedStudentNumber.isEmpty ? "학번을 입력해주세요." : nil
+        nameErrorMessage = trimmedName.isEmpty ? "이름을 입력해주세요." : nil
+
+        return studentNumberErrorMessage == nil && nameErrorMessage == nil
     }
 
     private static func formattedPhoneNumber(_ value: String) -> String {

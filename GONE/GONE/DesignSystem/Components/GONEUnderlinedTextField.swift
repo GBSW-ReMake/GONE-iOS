@@ -53,11 +53,19 @@ struct GONEUnderlinedTextField: View {
         return isFocused ? .goneBrandPrimary : .goneBorderDefault
     }
 
+    private var titleColor: Color {
+        if errorMessage != nil {
+            return .goneStatusError
+        }
+
+        return isFocused ? .goneBrandPrimary : .goneTextSecondary
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(GONEFont.sfPro(size: 13, weight: .medium))
-                .foregroundStyle(Color.goneTextSecondary)
+                .foregroundStyle(titleColor)
 
             HStack(spacing: GONESpacing.small) {
                 Group {

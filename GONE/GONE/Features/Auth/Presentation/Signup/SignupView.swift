@@ -5,10 +5,14 @@
 //  Created by Codex on 2026-08-04.
 //
 
+import PhotosUI
 import SwiftUI
+import UIKit
 
 struct SignupView: View {
     @StateObject private var viewModel = SignupViewModel()
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isProfileImageLoading = false
 
     let onDismiss: () -> Void
 
@@ -37,11 +41,26 @@ struct SignupView: View {
                             removal: .move(edge: .leading).combined(with: .opacity)
                         )
                     )
+
+                if let serviceErrorMessage = viewModel.serviceErrorMessage {
+                    Text(serviceErrorMessage)
+                        .font(GONEFont.sfPro(size: 14))
+                        .foregroundStyle(Color.goneStatusError)
+                        .padding(.top, GONESpacing.large)
+                        .accessibilityLabel("회원가입 안내: \(serviceErrorMessage)")
+                }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.bottom, GONESpacing.section)
         }
         .scrollDismissesKeyboard(.interactively)
+        .onChange(of: selectedPhotoItem) { _, selectedPhotoItem in
+            guard let selectedPhotoItem else { return }
+
+            Task {
+                await loadProfileImage(from: selectedPhotoItem)
+            }
+        }
         .background(Color.white)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             GONEPrimaryButton(
@@ -171,14 +190,90 @@ struct SignupView: View {
                     errorMessage: viewModel.verificationErrorMessage
                 )
 
-                if let serviceErrorMessage = viewModel.serviceErrorMessage {
-                    Text(serviceErrorMessage)
-                        .font(GONEFont.sfPro(size: 14))
-                        .foregroundStyle(Color.goneStatusError)
-                        .accessibilityLabel("회원가입 안내: \(serviceErrorMessage)")
+            }
+        case .studentInformation:
+            VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
+                GONEUnderlinedTextField(
+                    title: "학번",
+                    placeholder: "1101",
+                    text: $viewModel.studentNumber,
+                    textContentType: .none,
+                    keyboardType: .numberPad,
+                    errorMessage: viewModel.studentNumberErrorMessage
+                )
+
+                GONEUnderlinedTextField(
+                    title: "이름",
+                    placeholder: "홍길동",
+                    text: $viewModel.name,
+                    textContentType: .name,
+                    errorMessage: viewModel.nameErrorMessage
+                )
+            }
+        case .profileImage:
+            profileImagePicker
+        }
+    }
+
+    private var profileImagePicker: some View {
+        VStack(spacing: GONESpacing.large) {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                ZStack(alignment: .bottomTrailing) {
+                    Group {
+                        if let profileImage {
+                            Image(uiImage: profileImage)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 58, weight: .medium))
+                                .foregroundStyle(Color.goneTextTertiary)
+                        }
+                    }
+                    .frame(width: 140, height: 140)
+                    .background(Color.goneSurfaceDisabled)
+                    .clipShape(Circle())
+
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.goneBrandPrimary, in: Circle())
+                        .overlay {
+                            Circle().stroke(Color.white, lineWidth: 3)
+                        }
+                }
+                .overlay {
+                    if isProfileImageLoading {
+                        ProgressView()
+                            .tint(Color.goneBrandPrimary)
+                    }
                 }
             }
+            .buttonStyle(.plain)
+            .frame(minWidth: 44, minHeight: 44)
+            .accessibilityLabel("프로필 사진 선택")
+            .accessibilityValue(viewModel.profileImageData == nil ? "선택 사항, 기본 이미지" : "선택한 프로필 사진")
+            .accessibilityHint("사진을 선택하지 않아도 계속할 수 있습니다.")
+
+            Text("사진을 선택하지 않아도 괜찮아요")
+                .font(GONEFont.sfPro(size: 14))
+                .foregroundStyle(Color.goneTextSecondary)
+
+            if let profileImageErrorMessage = viewModel.profileImageErrorMessage {
+                Text(profileImageErrorMessage)
+                    .font(GONEFont.sfPro(size: 13))
+                    .foregroundStyle(Color.goneStatusError)
+                    .multilineTextAlignment(.center)
+                    .accessibilityLabel("오류: \(profileImageErrorMessage)")
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var profileImage: UIImage? {
+        guard let profileImageData = viewModel.profileImageData else { return nil }
+        return UIImage(data: profileImageData)
     }
 
     private func handleBack() {
@@ -201,6 +296,18 @@ struct SignupView: View {
     private func handlePrimaryAction() {
         withAnimation(.snappy(duration: 0.28)) {
             viewModel.proceed()
+        }
+    }
+
+    @MainActor
+    private func loadProfileImage(from item: PhotosPickerItem) async {
+        isProfileImageLoading = true
+        defer { isProfileImageLoading = false }
+
+        do {
+            viewModel.updateProfileImage(data: try await item.loadTransferable(type: Data.self))
+        } catch {
+            viewModel.reportProfileImageLoadingFailure()
         }
     }
 }
