@@ -13,7 +13,7 @@ struct CampingCalendarDay: Identifiable, Equatable {
     var id: Date { date }
 }
 
-struct CampingParticipant: Identifiable, Equatable {
+struct CampingParticipant: Identifiable, Hashable {
     let id: UUID
     var studentNumber: String
     var name: String
@@ -47,12 +47,14 @@ struct CampingTeacher: Identifiable, Equatable {
     let name: String
 }
 
-struct SchoolCampingReservationDraft: Equatable {
+struct SchoolCampingReservationDraft: Identifiable, Hashable {
     let date: Date
     let teacherName: String
     var participants: [CampingParticipant]
 
     var representative: CampingParticipant? { participants.first }
+
+    var id: Date { date }
 
     var isValid: Bool {
         !teacherName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

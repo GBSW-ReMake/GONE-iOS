@@ -3,7 +3,7 @@ import UIKit
 
 struct SchoolCampingView: View {
     @ObservedObject var viewModel: SchoolCampingViewModel
-    @State private var isShowingForm = false
+    @State private var activeDraft: SchoolCampingReservationDraft?
 
     var body: some View {
         NavigationStack {
@@ -19,7 +19,7 @@ struct SchoolCampingView: View {
                     } else {
                         SchoolCampingCalendarView(viewModel: viewModel) { day in
                             viewModel.select(day)
-                            isShowingForm = viewModel.selectedDate != nil
+                            activeDraft = viewModel.makeDraft()
                         }
                     }
                 case .failed:
@@ -33,17 +33,13 @@ struct SchoolCampingView: View {
                 }
             }
             .background(Color.goneScreenBackground.ignoresSafeArea())
-            .navigationDestination(isPresented: $isShowingForm) {
-                if let draft = viewModel.makeDraft() {
-                    SchoolCampingReservationForm(
-                        draft: draft,
-                        searchStudents: viewModel.searchStudents,
-                        searchTeachers: viewModel.searchTeachers
-                    ) { submittedDraft in
-                        isShowingForm = false
-                        await viewModel.submit(submittedDraft)
-                    }
-                }
+            .navigationDestination(item: $activeDraft) { draft in
+                SchoolCampingReservationForm(
+                    draft: draft,
+                    searchStudents: viewModel.searchStudents,
+                    searchTeachers: viewModel.searchTeachers,
+                    submit: viewModel.submit
+                )
             }
         }
         .task {
@@ -204,6 +200,7 @@ private struct SchoolCampingReservationForm: View {
                 ) {
                     isSubmitting = true
                     let submission = draft
+                    dismiss()
                     Task {
                         await submit(submission)
                     }
