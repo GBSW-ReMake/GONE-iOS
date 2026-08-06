@@ -36,8 +36,8 @@ struct SchoolCampingView: View {
             .navigationDestination(isPresented: $isShowingForm) {
                 if let draft = viewModel.makeDraft() {
                     SchoolCampingReservationForm(draft: draft, searchStudents: viewModel.searchStudents) { submittedDraft in
-                        await viewModel.submit(submittedDraft)
                         isShowingForm = false
+                        await viewModel.submit(submittedDraft)
                     }
                 }
             }
@@ -198,9 +198,9 @@ private struct SchoolCampingReservationForm: View {
                     disabledForeground: .white
                 ) {
                     isSubmitting = true
+                    let submission = draft
                     Task {
-                        await submit(draft)
-                        isSubmitting = false
+                        await submit(submission)
                     }
                 }
             }
