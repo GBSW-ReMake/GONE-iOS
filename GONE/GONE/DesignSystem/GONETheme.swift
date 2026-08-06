@@ -35,4 +35,9 @@ extension Color {
     static let goneBorderDefault = Color(red: 221 / 255, green: 225 / 255, blue: 230 / 255)
     static let goneSurfaceDisabled = Color(red: 241 / 255, green: 243 / 255, blue: 245 / 255)
     static let goneStatusError = Color(red: 255 / 255, green: 90 / 255, blue: 95 / 255)
+    static let goneSurfacePrimary = Color.white
+    static let goneScreenBackground = Color(red: 242 / 255, green: 244 / 255, blue: 247 / 255)
+    static let goneStatusWaiting = Color(red: 163 / 255, green: 171 / 255, blue: 184 / 255)
+    static let goneStatusOuting = Color(red: 255 / 255, green: 181 / 255, blue: 65 / 255)
+    static let goneStatusReturn = Color(red: 255 / 255, green: 88 / 255, blue: 96 / 255)
 }
