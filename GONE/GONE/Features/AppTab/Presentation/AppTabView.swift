@@ -8,6 +8,7 @@ struct AppTabView: View {
     @State private var selection: AppTab = .home
     @StateObject private var labReservationViewModel: LabReservationViewModel
     @StateObject private var outingViewModel: OutingViewModel
+    @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
 
     init() {
         _labReservationViewModel = StateObject(
@@ -15,6 +16,9 @@ struct AppTabView: View {
         )
         _outingViewModel = StateObject(
             wrappedValue: OutingViewModel(repository: MockOutingRepository())
+        )
+        _schoolCampingViewModel = StateObject(
+            wrappedValue: SchoolCampingViewModel(repository: MockSchoolCampingRepository())
         )
     }
 
@@ -36,7 +40,7 @@ struct AppTabView: View {
                 .tabItem { Label("외출", image: "OutingTabIcon") }
                 .tag(AppTab.outing)
 
-            TabPlaceholderView(title: "스쿨캠핑", systemImage: "tent")
+            SchoolCampingView(viewModel: schoolCampingViewModel)
                 .tabItem { Label("스쿨캠핑", image: "CampingTabIcon") }
                 .tag(AppTab.schoolCamping)
 
