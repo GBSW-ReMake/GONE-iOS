@@ -24,9 +24,18 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
         currentReservation
     }
 
+    func searchStudents(query: String) async throws -> [CampingStudent] {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else { return students }
+        return students.filter {
+            $0.studentNumber.localizedCaseInsensitiveContains(keyword)
+                || $0.name.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
     func submit(_ draft: SchoolCampingReservationDraft) async throws -> SchoolCampingReservation {
         let reservation = SchoolCampingReservation(
-            id: "C-\(Self.identifierDateFormatter.string(from: draft.date))",
+            id: "C-\(reservationIdentifier(for: draft.date))",
             date: draft.date,
             teacherName: draft.teacherName,
             participants: draft.participants,
@@ -41,12 +50,19 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
         currentReservation = nil
     }
 
-    private static let identifierDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "MMdd"
-        return formatter
-    }()
+    private func reservationIdentifier(for date: Date) -> String {
+        let components = calendar.dateComponents([.month, .day], from: date)
+        return String(format: "%02d%02d", components.month ?? 0, components.day ?? 0)
+    }
+
+    private let students: [CampingStudent] = [
+        CampingStudent(studentNumber: "3206", name: "김은찬"),
+        CampingStudent(studentNumber: "3201", name: "김민준"),
+        CampingStudent(studentNumber: "3202", name: "박서연"),
+        CampingStudent(studentNumber: "3203", name: "이도윤"),
+        CampingStudent(studentNumber: "3204", name: "최유진"),
+        CampingStudent(studentNumber: "3205", name: "한지민")
+    ]
 }
 
 private extension Calendar {

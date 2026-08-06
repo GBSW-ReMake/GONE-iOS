@@ -34,6 +34,14 @@ struct CampingParticipant: Identifiable, Equatable {
     }
 }
 
+struct CampingStudent: Identifiable, Equatable {
+    let studentNumber: String
+    let name: String
+
+    var id: String { studentNumber }
+    var displayName: String { "\(studentNumber) \(name)" }
+}
+
 struct SchoolCampingReservationDraft: Equatable {
     let date: Date
     let teacherName: String
@@ -42,7 +50,9 @@ struct SchoolCampingReservationDraft: Equatable {
     var representative: CampingParticipant? { participants.first }
 
     var isValid: Bool {
-        (1...8).contains(participants.count) && participants.allSatisfy(\.isValid)
+        !teacherName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && (1...8).contains(participants.count)
+            && participants.allSatisfy(\.isValid)
     }
 }
 

@@ -35,7 +35,7 @@ struct SchoolCampingView: View {
             .background(Color.goneScreenBackground.ignoresSafeArea())
             .navigationDestination(isPresented: $isShowingForm) {
                 if let draft = viewModel.makeDraft() {
-                    SchoolCampingReservationForm(draft: draft) { submittedDraft in
+                    SchoolCampingReservationForm(draft: draft, searchStudents: viewModel.searchStudents) { submittedDraft in
                         await viewModel.submit(submittedDraft)
                         isShowingForm = false
                     }
@@ -78,10 +78,11 @@ private struct SchoolCampingCalendarView: View {
                     monthNavigation
                     weekdayHeader
                     calendarGrid
-                    legend
                 }
                 .padding(GONESpacing.large)
                 .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
+
+                legend
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -91,17 +92,15 @@ private struct SchoolCampingCalendarView: View {
     }
 
     private var monthNavigation: some View {
-        HStack {
+        HStack(spacing: 36) {
             Button { Task { await viewModel.moveMonth(by: -1) } } label: {
                 Image(systemName: "chevron.left")
             }
             .buttonStyle(.plain)
             .accessibilityLabel("이전 달")
 
-            Spacer()
-            Text(viewModel.displayedMonth.formatted(.dateTime.year().month()))
+            Text(CampingDisplayFormatter.month(viewModel.displayedMonth))
                 .font(.headline.weight(.semibold))
-            Spacer()
 
             Button { Task { await viewModel.moveMonth(by: 1) } } label: {
                 Image(systemName: "chevron.right")
@@ -110,6 +109,7 @@ private struct SchoolCampingCalendarView: View {
             .accessibilityLabel("다음 달")
         }
         .foregroundStyle(Color.goneTextPrimary)
+        .frame(maxWidth: .infinity)
     }
 
     private var weekdayHeader: some View {
@@ -157,14 +157,21 @@ private struct SchoolCampingCalendarView: View {
 
 private struct SchoolCampingReservationForm: View {
     let submit: (SchoolCampingReservationDraft) async -> Void
+    let searchStudents: (String) async -> [CampingStudent]
     @Environment(\.dismiss) private var dismiss
     @State private var teacherName: String
     @State private var participants: [CampingParticipant]
     @State private var isSubmitting = false
+    @State private var isShowingStudentSearch = false
     let date: Date
 
-    init(draft: SchoolCampingReservationDraft, submit: @escaping (SchoolCampingReservationDraft) async -> Void) {
+    init(
+        draft: SchoolCampingReservationDraft,
+        searchStudents: @escaping (String) async -> [CampingStudent],
+        submit: @escaping (SchoolCampingReservationDraft) async -> Void
+    ) {
         self.date = draft.date
+        self.searchStudents = searchStudents
         self.submit = submit
         _teacherName = State(initialValue: draft.teacherName)
         _participants = State(initialValue: draft.participants)
@@ -203,6 +210,15 @@ private struct SchoolCampingReservationForm: View {
         .background(Color.goneScreenBackground.ignoresSafeArea())
         .contentShape(Rectangle())
         .onTapGesture { dismissKeyboard() }
+        .sheet(isPresented: $isShowingStudentSearch) {
+            StudentSearchSheet(searchStudents: searchStudents) { student in
+                addParticipant(student)
+                isShowingStudentSearch = false
+            }
+            .presentationDetents([.medium, .large])
+            .presentationBackground(Color.goneSurfacePrimary)
+            .preferredColorScheme(.light)
+        }
         .navigationTitle("예약")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -228,12 +244,12 @@ private struct SchoolCampingReservationForm: View {
                 Text("\(participants.count) / 8명").font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
 
-            ForEach($participants) { $participant in
+            ForEach(participants) { participant in
                 HStack(spacing: GONESpacing.small) {
-                    TextField("학번", text: $participant.studentNumber)
-                        .keyboardType(.numberPad)
-                        .frame(width: 68)
-                    TextField("이름", text: $participant.name)
+                    Text(participant.studentNumber)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 58, alignment: .leading)
+                    Text(participant.name)
                     if participants.count > 1 {
                         Button { removeParticipant(id: participant.id) } label: {
                             Image(systemName: "xmark")
@@ -248,7 +264,7 @@ private struct SchoolCampingReservationForm: View {
                 .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneBorderDefault))
             }
 
-            Button { addParticipant() } label: {
+            Button { isShowingStudentSearch = true } label: {
                 Label("인원 추가", systemImage: "plus")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
@@ -258,7 +274,7 @@ private struct SchoolCampingReservationForm: View {
             }
             .disabled(participants.count >= 8)
 
-            Text("학번과 이름을 함께 입력해 주세요. 최대 8명까지 예약할 수 있습니다.")
+            Text("학생을 검색해 추가할 수 있습니다. 최대 8명까지 예약할 수 있습니다.")
                 .font(.caption2)
                 .foregroundStyle(Color.goneTextSecondary)
         }
@@ -276,9 +292,10 @@ private struct SchoolCampingReservationForm: View {
         }
     }
 
-    private func addParticipant() {
+    private func addParticipant(_ student: CampingStudent) {
         guard participants.count < 8 else { return }
-        participants.append(CampingParticipant(studentNumber: "", name: ""))
+        guard !participants.contains(where: { $0.studentNumber == student.studentNumber }) else { return }
+        participants.append(CampingParticipant(studentNumber: student.studentNumber, name: student.name))
     }
 
     private func removeParticipant(id: UUID) {
@@ -354,7 +371,60 @@ private struct CampingDetailRow: View {
     }
 }
 
+private struct StudentSearchSheet: View {
+    let searchStudents: (String) async -> [CampingStudent]
+    let select: (CampingStudent) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+    @State private var results: [CampingStudent] = []
+
+    var body: some View {
+        NavigationStack {
+            List(results) { student in
+                Button { select(student) } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(student.displayName).font(.body.weight(.semibold))
+                            Text("학생 추가").font(.caption).foregroundStyle(Color.goneTextSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: "plus.circle.fill").foregroundStyle(Color.goneBrandPrimary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .listStyle(.plain)
+            .overlay {
+                if results.isEmpty {
+                    ContentUnavailableView("검색 결과가 없어요", systemImage: "person.crop.circle.badge.questionmark", description: Text("학번 또는 이름으로 다시 검색해 주세요."))
+                }
+            }
+            .searchable(text: $query, prompt: "학번 또는 이름 검색")
+            .navigationTitle("학생 검색")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+        }
+        .task { await loadResults() }
+        .task(id: query) { await loadResults() }
+    }
+
+    private func loadResults() async {
+        results = await searchStudents(query)
+    }
+}
+
 private enum CampingDisplayFormatter {
+    static func month(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy년 M월"
+        return formatter.string(from: date)
+    }
+
     static func dateWithWeekday(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")

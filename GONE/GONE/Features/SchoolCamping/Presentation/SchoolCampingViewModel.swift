@@ -52,9 +52,18 @@ final class SchoolCampingViewModel: ObservableObject {
         guard let selectedDate else { return nil }
         return SchoolCampingReservationDraft(
             date: selectedDate,
-            teacherName: "박00 선생님",
+            teacherName: "",
             participants: [CampingParticipant(studentNumber: "3206", name: "김은찬")]
         )
+    }
+
+    func searchStudents(query: String) async -> [CampingStudent] {
+        do {
+            return try await repository.searchStudents(query: query)
+        } catch {
+            errorMessage = "학생을 검색하지 못했어요."
+            return []
+        }
     }
 
     func submit(_ draft: SchoolCampingReservationDraft) async {
