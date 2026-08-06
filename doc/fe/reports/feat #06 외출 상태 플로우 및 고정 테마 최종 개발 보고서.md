@@ -3,7 +3,7 @@
 > **완료일**: 2026-08-06
 > **작업 번호**: #06
 > **관련 이슈**: [#12](https://github.com/GBSW-ReMake/GONE-iOS/issues/12)
-> **PR**: 생성 전
+> **PR**: [#13](https://github.com/GBSW-ReMake/GONE-iOS/pull/13)
 > **브랜치**: `feat/12-outing-flow`
 
 ---
