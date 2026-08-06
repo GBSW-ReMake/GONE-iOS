@@ -12,6 +12,8 @@ struct GONEPrimaryButton: View {
     let isEnabled: Bool
     let isLoading: Bool
     var fontSize: CGFloat = 17
+    var disabledBackground: Color = .goneSurfaceDisabled
+    var disabledForeground: Color = .goneTextTertiary
     let action: () -> Void
 
     var body: some View {
@@ -28,8 +30,8 @@ struct GONEPrimaryButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 54)
         }
-        .foregroundStyle(isEnabled ? Color.white : Color.goneTextTertiary)
-        .background(isEnabled ? Color.goneBrandPrimary : Color.goneSurfaceDisabled)
+        .foregroundStyle(isEnabled ? Color.white : disabledForeground)
+        .background(isEnabled ? Color.goneBrandPrimary : disabledBackground)
         .clipShape(RoundedRectangle(cornerRadius: GONECornerRadius.button, style: .continuous))
         .disabled(!isEnabled || isLoading)
         .accessibilityLabel(title)

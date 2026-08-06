@@ -7,10 +7,14 @@ enum AppTab: Hashable {
 struct AppTabView: View {
     @State private var selection: AppTab = .home
     @StateObject private var labReservationViewModel: LabReservationViewModel
+    @StateObject private var outingViewModel: OutingViewModel
 
     init() {
         _labReservationViewModel = StateObject(
             wrappedValue: LabReservationViewModel(repository: MockLabReservationRepository())
+        )
+        _outingViewModel = StateObject(
+            wrappedValue: OutingViewModel(repository: MockOutingRepository())
         )
     }
 
@@ -28,7 +32,7 @@ struct AppTabView: View {
                 .tabItem { Label("실습실", image: "LabTabIcon") }
                 .tag(AppTab.lab)
 
-            TabPlaceholderView(title: "외출", systemImage: "figure.walk")
+            OutingView(viewModel: outingViewModel)
                 .tabItem { Label("외출", image: "OutingTabIcon") }
                 .tag(AppTab.outing)
 

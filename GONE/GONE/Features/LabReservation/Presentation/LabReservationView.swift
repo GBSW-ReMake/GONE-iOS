@@ -208,7 +208,13 @@ private struct LabReservationFormView: View {
                         .focused($focusedField, equals: .purpose)
                 }
 
-                GONEPrimaryButton(title: "대여 신청하기", isEnabled: draft.isValid, isLoading: isSubmitting) {
+                GONEPrimaryButton(
+                    title: "대여 신청하기",
+                    isEnabled: draft.isValid,
+                    isLoading: isSubmitting,
+                    disabledBackground: Color.goneBrandPrimary.opacity(0.48),
+                    disabledForeground: .white
+                ) {
                     isSubmitting = true
                     Task {
                         await submit(draft)
