@@ -66,6 +66,15 @@ final class SchoolCampingViewModel: ObservableObject {
         }
     }
 
+    func searchTeachers(query: String) async -> [CampingTeacher] {
+        do {
+            return try await repository.searchTeachers(query: query)
+        } catch {
+            errorMessage = "선생님을 검색하지 못했어요."
+            return []
+        }
+    }
+
     func submit(_ draft: SchoolCampingReservationDraft) async {
         do {
             reservation = try await repository.submit(draft)

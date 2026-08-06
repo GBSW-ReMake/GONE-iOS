@@ -35,7 +35,11 @@ struct SchoolCampingView: View {
             .background(Color.goneScreenBackground.ignoresSafeArea())
             .navigationDestination(isPresented: $isShowingForm) {
                 if let draft = viewModel.makeDraft() {
-                    SchoolCampingReservationForm(draft: draft, searchStudents: viewModel.searchStudents) { submittedDraft in
+                    SchoolCampingReservationForm(
+                        draft: draft,
+                        searchStudents: viewModel.searchStudents,
+                        searchTeachers: viewModel.searchTeachers
+                    ) { submittedDraft in
                         isShowingForm = false
                         await viewModel.submit(submittedDraft)
                     }
@@ -158,20 +162,24 @@ private struct SchoolCampingCalendarView: View {
 private struct SchoolCampingReservationForm: View {
     let submit: (SchoolCampingReservationDraft) async -> Void
     let searchStudents: (String) async -> [CampingStudent]
+    let searchTeachers: (String) async -> [CampingTeacher]
     @Environment(\.dismiss) private var dismiss
     @State private var teacherName: String
     @State private var participants: [CampingParticipant]
     @State private var isSubmitting = false
     @State private var isShowingStudentSearch = false
+    @State private var isShowingTeacherSearch = false
     let date: Date
 
     init(
         draft: SchoolCampingReservationDraft,
         searchStudents: @escaping (String) async -> [CampingStudent],
+        searchTeachers: @escaping (String) async -> [CampingTeacher],
         submit: @escaping (SchoolCampingReservationDraft) async -> Void
     ) {
         self.date = draft.date
         self.searchStudents = searchStudents
+        self.searchTeachers = searchTeachers
         self.submit = submit
         _teacherName = State(initialValue: draft.teacherName)
         _participants = State(initialValue: draft.participants)
@@ -185,10 +193,7 @@ private struct SchoolCampingReservationForm: View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 selectedDateRow
-                formSection(title: "담당 선생님") {
-                    TextField("담당 선생님", text: $teacherName)
-                        .textInputAutocapitalization(.never)
-                }
+                teacherSection
                 participantSection
                 GONEPrimaryButton(
                     title: "예약하기",
@@ -219,6 +224,15 @@ private struct SchoolCampingReservationForm: View {
             .presentationBackground(Color.goneSurfacePrimary)
             .preferredColorScheme(.light)
         }
+        .sheet(isPresented: $isShowingTeacherSearch) {
+            TeacherSearchSheet(searchTeachers: searchTeachers) { teacher in
+                teacherName = teacher.name
+                isShowingTeacherSearch = false
+            }
+            .presentationDetents([.medium, .large])
+            .presentationBackground(Color.goneSurfacePrimary)
+            .preferredColorScheme(.light)
+        }
         .navigationTitle("예약")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -233,6 +247,27 @@ private struct SchoolCampingReservationForm: View {
         .padding(GONESpacing.large)
         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
+    }
+
+    private var teacherSection: some View {
+        VStack(alignment: .leading, spacing: GONESpacing.small) {
+            Text("담당 선생님").font(.headline.weight(.bold))
+            Button { isShowingTeacherSearch = true } label: {
+                HStack {
+                    Text(teacherName.isEmpty ? "선생님 검색" : teacherName)
+                        .foregroundStyle(teacherName.isEmpty ? Color.goneTextTertiary : Color.goneTextPrimary)
+                    Spacer()
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(Color.goneTextSecondary)
+                }
+                .font(.subheadline)
+                .padding(GONESpacing.medium)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 13))
+                .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneBorderDefault))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var participantSection: some View {
@@ -277,18 +312,6 @@ private struct SchoolCampingReservationForm: View {
             Text("학생을 검색해 추가할 수 있습니다. 최대 8명까지 예약할 수 있습니다.")
                 .font(.caption2)
                 .foregroundStyle(Color.goneTextSecondary)
-        }
-    }
-
-    private func formSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: GONESpacing.small) {
-            Text(title).font(.headline.weight(.bold))
-            content()
-                .font(.subheadline)
-                .padding(GONESpacing.medium)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 13))
-                .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.goneBorderDefault))
         }
     }
 
@@ -414,6 +437,59 @@ private struct StudentSearchSheet: View {
 
     private func loadResults() async {
         results = await searchStudents(query)
+    }
+}
+
+private struct TeacherSearchSheet: View {
+    let searchTeachers: (String) async -> [CampingTeacher]
+    let select: (CampingTeacher) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+    @State private var results: [CampingTeacher] = []
+
+    var body: some View {
+        NavigationStack {
+            List(results) { teacher in
+                Button { select(teacher) } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(teacher.name).font(.body.weight(.semibold))
+                            Text("담당 선생님으로 선택")
+                                .font(.caption)
+                                .foregroundStyle(Color.goneTextSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(Color.goneBrandPrimary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .listStyle(.plain)
+            .overlay {
+                if results.isEmpty {
+                    ContentUnavailableView(
+                        "검색 결과가 없어요",
+                        systemImage: "person.crop.circle.badge.questionmark",
+                        description: Text("선생님 이름으로 다시 검색해 주세요.")
+                    )
+                }
+            }
+            .searchable(text: $query, prompt: "선생님 이름 검색")
+            .navigationTitle("선생님 검색")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+        }
+        .task { await loadResults() }
+        .task(id: query) { await loadResults() }
+    }
+
+    private func loadResults() async {
+        results = await searchTeachers(query)
     }
 }
 

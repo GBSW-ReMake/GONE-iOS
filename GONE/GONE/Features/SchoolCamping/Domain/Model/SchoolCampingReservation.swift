@@ -42,6 +42,11 @@ struct CampingStudent: Identifiable, Equatable {
     var displayName: String { "\(studentNumber) \(name)" }
 }
 
+struct CampingTeacher: Identifiable, Equatable {
+    let id: String
+    let name: String
+}
+
 struct SchoolCampingReservationDraft: Equatable {
     let date: Date
     let teacherName: String

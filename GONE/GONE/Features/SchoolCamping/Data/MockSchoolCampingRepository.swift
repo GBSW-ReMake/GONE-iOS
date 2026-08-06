@@ -33,6 +33,12 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
         }
     }
 
+    func searchTeachers(query: String) async throws -> [CampingTeacher] {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else { return teachers }
+        return teachers.filter { $0.name.localizedCaseInsensitiveContains(keyword) }
+    }
+
     func submit(_ draft: SchoolCampingReservationDraft) async throws -> SchoolCampingReservation {
         let reservation = SchoolCampingReservation(
             id: "C-\(reservationIdentifier(for: draft.date))",
@@ -62,6 +68,12 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
         CampingStudent(studentNumber: "3203", name: "이도윤"),
         CampingStudent(studentNumber: "3204", name: "최유진"),
         CampingStudent(studentNumber: "3205", name: "한지민")
+    ]
+
+    private let teachers: [CampingTeacher] = [
+        CampingTeacher(id: "teacher-1", name: "박00 선생님"),
+        CampingTeacher(id: "teacher-2", name: "김00 선생님"),
+        CampingTeacher(id: "teacher-3", name: "이00 선생님")
     ]
 }
 
