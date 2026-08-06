@@ -1,13 +1,14 @@
 import Foundation
 
-actor MockSchoolCampingRepository: SchoolCampingRepository {
+@MainActor
+final class MockSchoolCampingRepository: SchoolCampingRepository {
     private var currentReservation: SchoolCampingReservation?
     private let calendar = Calendar.current
 
     func fetchCalendarDays(for month: Date) async throws -> [CampingCalendarDay] {
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
 
-        return calendar.dates(in: monthInterval).map { date in
+        return dates(in: monthInterval).map { date in
             let availability: CampingDateAvailability
             if calendar.isDate(date, inSameDayAs: currentReservation?.date ?? .distantPast) {
                 availability = .reservedByMe
@@ -51,6 +52,15 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
         return reservation
     }
 
+    func update(_ draft: SchoolCampingReservationDraft) async throws -> SchoolCampingReservation {
+        guard let currentReservation else {
+            return try await submit(draft)
+        }
+
+        currentReservation.apply(draft)
+        return currentReservation
+    }
+
     func cancel(_ reservation: SchoolCampingReservation) async throws {
         guard currentReservation?.id == reservation.id else { return }
         currentReservation = nil
@@ -59,6 +69,18 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
     private func reservationIdentifier(for date: Date) -> String {
         let components = calendar.dateComponents([.month, .day], from: date)
         return String(format: "%02d%02d", components.month ?? 0, components.day ?? 0)
+    }
+
+    private func dates(in interval: DateInterval) -> [Date] {
+        var dates: [Date] = []
+        var date = calendar.startOfDay(for: interval.start)
+
+        while date < interval.end {
+            dates.append(date)
+            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else { break }
+            date = nextDate
+        }
+        return dates
     }
 
     private let students: [CampingStudent] = [
@@ -75,18 +97,4 @@ actor MockSchoolCampingRepository: SchoolCampingRepository {
         CampingTeacher(id: "teacher-2", name: "김00 선생님"),
         CampingTeacher(id: "teacher-3", name: "이00 선생님")
     ]
-}
-
-private extension Calendar {
-    func dates(in interval: DateInterval) -> [Date] {
-        var dates: [Date] = []
-        var date = startOfDay(for: interval.start)
-
-        while date < interval.end {
-            dates.append(date)
-            guard let nextDate = self.date(byAdding: .day, value: 1, to: date) else { break }
-            date = nextDate
-        }
-        return dates
-    }
 }

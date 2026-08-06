@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 enum CampingDateAvailability: Equatable {
@@ -13,7 +14,7 @@ struct CampingCalendarDay: Identifiable, Equatable {
     var id: Date { date }
 }
 
-struct CampingParticipant: Identifiable, Hashable {
+struct CampingParticipant: Identifiable, Equatable {
     let id: UUID
     var studentNumber: String
     var name: String
@@ -47,14 +48,12 @@ struct CampingTeacher: Identifiable, Equatable {
     let name: String
 }
 
-struct SchoolCampingReservationDraft: Identifiable, Hashable {
+struct SchoolCampingReservationDraft: Equatable {
     let date: Date
     let teacherName: String
     var participants: [CampingParticipant]
 
     var representative: CampingParticipant? { participants.first }
-
-    var id: Date { date }
 
     var isValid: Bool {
         !teacherName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -63,16 +62,40 @@ struct SchoolCampingReservationDraft: Identifiable, Hashable {
     }
 }
 
-struct SchoolCampingReservation: Identifiable, Equatable {
-    enum Status: Equatable {
+final class SchoolCampingReservation: ObservableObject, Identifiable, Equatable {
+    enum Status {
         case submitted
     }
 
     let id: String
     let date: Date
-    let teacherName: String
-    let participants: [CampingParticipant]
     let status: Status
+    private(set) var teacherName: String
+    private(set) var participants: [CampingParticipant]
 
     var representative: CampingParticipant? { participants.first }
+
+    init(
+        id: String,
+        date: Date,
+        teacherName: String,
+        participants: [CampingParticipant],
+        status: Status
+    ) {
+        self.id = id
+        self.date = date
+        self.teacherName = teacherName
+        self.participants = participants
+        self.status = status
+    }
+
+    static func == (lhs: SchoolCampingReservation, rhs: SchoolCampingReservation) -> Bool {
+        lhs === rhs
+    }
+
+    func apply(_ draft: SchoolCampingReservationDraft) {
+        objectWillChange.send()
+        teacherName = draft.teacherName
+        participants = draft.participants
+    }
 }

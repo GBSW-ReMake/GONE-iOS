@@ -50,8 +50,12 @@ final class SchoolCampingViewModel: ObservableObject {
 
     func makeDraft() -> SchoolCampingReservationDraft? {
         guard let selectedDate else { return nil }
+        return makeDraft(for: selectedDate)
+    }
+
+    func makeDraft(for date: Date) -> SchoolCampingReservationDraft {
         return SchoolCampingReservationDraft(
-            date: selectedDate,
+            date: date,
             teacherName: "",
             participants: [CampingParticipant(studentNumber: "3206", name: "김은찬")]
         )
@@ -82,6 +86,20 @@ final class SchoolCampingViewModel: ObservableObject {
             await loadCalendarDays()
         } catch {
             errorMessage = "스쿨캠핑 예약을 신청하지 못했어요."
+        }
+    }
+
+    func updateReservation(_ draft: SchoolCampingReservationDraft) async -> Bool {
+        do {
+            let updatedReservation = try await repository.update(draft)
+            if reservation !== updatedReservation {
+                reservation = updatedReservation
+            }
+            await loadCalendarDays()
+            return true
+        } catch {
+            errorMessage = "참여 명단을 수정하지 못했어요."
+            return false
         }
     }
 
