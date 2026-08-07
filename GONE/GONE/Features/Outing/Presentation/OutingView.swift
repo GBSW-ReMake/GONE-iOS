@@ -553,10 +553,7 @@ private struct DatePickerSheet: View {
     }
 
     private var weekRange: ClosedRange<Date> {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let end = calendar.date(byAdding: .day, value: 7 - calendar.component(.weekday, from: today), to: today) ?? today
-        return today...end
+        OutingApplicationPeriod.weekRange()
     }
 }
 

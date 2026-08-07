@@ -48,12 +48,9 @@ struct OutingDraft: Equatable, Hashable {
 
     nonisolated var validationMessage: String? {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let selectedDay = calendar.startOfDay(for: date)
-        let weekday = calendar.component(.weekday, from: today)
-        let daysUntilSaturday = 7 - weekday
-        let endOfWeek = calendar.date(byAdding: .day, value: daysUntilSaturday, to: today) ?? today
-        guard selectedDay >= today && selectedDay <= endOfWeek else { return "외출은 이번 주 안에서만 신청할 수 있어요." }
+        guard OutingApplicationPeriod.contains(date, calendar: calendar) else {
+            return "외출은 이번 주 안에서만 신청할 수 있어요."
+        }
         guard minute(of: departureTime) >= Self.earliestMinute,
               minute(of: returnTime) <= Self.latestMinute else {
             return "외출 가능 시간은 오전 8:40부터 오후 8:30까지예요."
@@ -91,5 +88,19 @@ struct OutingDraft: Equatable, Hashable {
     nonisolated private func minute(of date: Date) -> Int {
         let components = Calendar.current.dateComponents([.hour, .minute], from: date)
         return (components.hour ?? 0) * 60 + (components.minute ?? 0)
+    }
+}
+
+enum OutingApplicationPeriod {
+    static func weekRange(referenceDate: Date = Date(), calendar: Calendar = .current) -> ClosedRange<Date> {
+        let start = calendar.startOfDay(for: referenceDate)
+        let weekday = calendar.component(.weekday, from: start)
+        let daysUntilSaturday = 7 - weekday
+        let end = calendar.date(byAdding: .day, value: daysUntilSaturday, to: start) ?? start
+        return start...end
+    }
+
+    static func contains(_ date: Date, referenceDate: Date = Date(), calendar: Calendar = .current) -> Bool {
+        weekRange(referenceDate: referenceDate, calendar: calendar).contains(calendar.startOfDay(for: date))
     }
 }
