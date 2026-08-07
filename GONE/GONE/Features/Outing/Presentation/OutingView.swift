@@ -133,8 +133,8 @@ private struct OutingRequestForm: View {
     @State private var selectedTimeMode: TimeSelectionMode?
     @FocusState private var isReasonFocused: Bool
 
-    private let lunch = (11 * 60 + 50, 13 * 60 + 10)
-    private let dinner = (17 * 60 + 30, 19 * 60)
+    private let lunch = (12 * 60 + 30, 13 * 60 + 30)
+    private let dinner = (18 * 60 + 10, 19 * 60 + 10)
 
     init(initialDraft: OutingDraft = OutingDraft(), searchTeachers: @escaping (String) async -> [OutingTeacher], submit: @escaping (OutingDraft) async -> Bool) {
         self.searchTeachers = searchTeachers

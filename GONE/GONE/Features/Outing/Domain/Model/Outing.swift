@@ -51,7 +51,9 @@ struct OutingDraft: Equatable, Hashable {
               minute(of: returnTime) <= Self.latestMinute else {
             return "외출 가능 시간은 오전 8:40부터 오후 8:30까지예요."
         }
-        guard returnTime > departureTime else { return "복귀 시간은 출발 시간 이후로 설정해 주세요." }
+        guard minute(of: returnTime) > minute(of: departureTime) else {
+            return "복귀 시간은 출발 시간 이후로 설정해 주세요."
+        }
         guard !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return "외출 사유를 입력해 주세요." }
         guard teacher != nil else { return "담당 선생님을 선택해 주세요." }
         return nil
