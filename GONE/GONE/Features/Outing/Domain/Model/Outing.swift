@@ -37,26 +37,11 @@ struct OutingRequest: Identifiable, Equatable, Hashable {
 }
 
 struct OutingDraft: Equatable, Hashable {
-    static let earliestMinute = 8 * 60 + 40
-    static let latestMinute = 20 * 60 + 30
-
     var date = Date()
     var departureTime = Date()
     var returnTime = Date().addingTimeInterval(30 * 60)
     var reason = ""
     var teacher: OutingTeacher?
-
-    nonisolated var validationMessage: String? {
-        guard minute(of: departureTime) >= Self.earliestMinute,
-              minute(of: returnTime) <= Self.latestMinute else {
-            return "외출 가능 시간은 오전 8:40부터 오후 8:30까지예요."
-        }
-        guard !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return "외출 사유를 입력해 주세요." }
-        guard teacher != nil else { return "담당 선생님을 선택해 주세요." }
-        return nil
-    }
-
-    nonisolated var isValid: Bool { validationMessage == nil }
 
     nonisolated func normalizedToSelectedDate() -> OutingDraft {
         let calendar = Calendar.current
@@ -80,10 +65,6 @@ struct OutingDraft: Equatable, Hashable {
         return normalized
     }
 
-    nonisolated private func minute(of date: Date) -> Int {
-        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
-        return (components.hour ?? 0) * 60 + (components.minute ?? 0)
-    }
 }
 
 enum OutingApplicationPeriod {

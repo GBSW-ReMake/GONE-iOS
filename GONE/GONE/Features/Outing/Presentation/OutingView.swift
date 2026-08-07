@@ -187,12 +187,9 @@ private struct OutingRequestForm: View {
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
-                if let message = normalizedDraft.validationMessage {
-                    Text(message).font(.footnote).foregroundStyle(Color.goneStatusError)
-                }
                 GONEPrimaryButton(
                     title: "외출 신청하기",
-                    isEnabled: selectedTimeMode != nil && normalizedDraft.isValid,
+                    isEnabled: selectedTimeMode != nil,
                     isLoading: isSubmitting,
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white

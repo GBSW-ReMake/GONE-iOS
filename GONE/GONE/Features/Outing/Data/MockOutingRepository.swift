@@ -36,9 +36,6 @@ actor MockOutingRepository: OutingRepository {
 
     func submit(_ draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
-        if let message = normalizedDraft.validationMessage {
-            throw OutingRepositoryError.invalidDraft(message)
-        }
         guard let teacher = normalizedDraft.teacher else {
             throw OutingRepositoryError.invalidDraft("담당 선생님을 선택해 주세요.")
         }
@@ -69,9 +66,6 @@ actor MockOutingRepository: OutingRepository {
 
     func update(_ outing: OutingRequest, with draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
-        if let message = normalizedDraft.validationMessage {
-            throw OutingRepositoryError.invalidDraft(message)
-        }
         guard let teacher = normalizedDraft.teacher else {
             throw OutingRepositoryError.invalidDraft("담당 선생님을 선택해 주세요.")
         }
