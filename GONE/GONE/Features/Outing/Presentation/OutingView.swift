@@ -178,12 +178,13 @@ private struct TeacherOutingListView: View {
             NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
                 VStack(alignment: .leading, spacing: GONESpacing.small) {
                     statusBadge(outing.status)
+                        .padding(.bottom, 4)
                     HStack(spacing: 5) {
                         Text(outing.student.studentNumber).font(.headline)
                         Text(outing.student.name).font(.headline).foregroundStyle(Color.goneBrandPrimary)
                         Text("외출").font(.headline)
                     }
-                    Text(dateText(outing.date)).font(.subheadline).foregroundStyle(Color.goneTextSecondary)
+                    Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
                     Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                         .font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                 }
@@ -205,6 +206,7 @@ private struct TeacherOutingDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
                 statusBadge(outing.status)
+                    .padding(.bottom, 4)
                 HStack(spacing: 5) {
                     Text(outing.student.studentNumber).font(.title2.bold())
                     Text(outing.student.name).font(.title2.bold()).foregroundStyle(Color.goneBrandPrimary)
@@ -215,8 +217,9 @@ private struct TeacherOutingDetailView: View {
                 detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                 detailRow("사유", outing.reason)
                 detailRow("지정 선생님", outing.teacher.name)
-                if case .pendingApproval = outing.status { actionButtons } else { statusLabel(outing.status) }
+                if case .pendingApproval = outing.status { actionButtons }
             }.padding(.horizontal, GONESpacing.screenHorizontal).padding(.vertical, GONESpacing.xLarge)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .navigationTitle("외출 상세")
         .navigationBarTitleDisplayMode(.inline)
@@ -226,11 +229,13 @@ private struct TeacherOutingDetailView: View {
         HStack(spacing: GONESpacing.medium) {
             Button("거절") { isRejecting = true }
                 .frame(maxWidth: .infinity, minHeight: 52)
+                .font(.headline.weight(.bold))
                 .foregroundStyle(Color.goneStatusError)
                 .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneStatusError))
             Button("수락") { Task { if await decide(outing, true, nil) { dismiss() } } }
                 .frame(maxWidth: .infinity, minHeight: 52)
+                .font(.headline.weight(.bold))
                 .foregroundStyle(.white)
                 .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
         }
@@ -326,21 +331,21 @@ private struct StudentOutingCard: View {
     switch status {
     case .pendingApproval:
         Text("승인 요청")
-            .font(.subheadline.weight(.bold))
+            .font(.caption.weight(.bold))
             .foregroundStyle(Color.goneStatusOuting)
-            .padding(.horizontal, 15).padding(.vertical, 9)
+            .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Color.goneStatusOuting.opacity(0.14), in: Capsule())
     case .approved:
         Text("승인 완료")
-            .font(.subheadline.weight(.bold))
+            .font(.caption.weight(.bold))
             .foregroundStyle(Color.goneBrandPrimary)
-            .padding(.horizontal, 15).padding(.vertical, 9)
+            .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
     case .rejected:
         Text("거절됨")
-            .font(.subheadline.weight(.bold))
+            .font(.caption.weight(.bold))
             .foregroundStyle(Color.goneStatusError)
-            .padding(.horizontal, 15).padding(.vertical, 9)
+            .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Color.goneStatusError.opacity(0.12), in: Capsule())
     }
 }
@@ -362,6 +367,7 @@ private struct RejectionReasonSheet: View {
                     .background(Color.goneSurfaceDisabled, in: RoundedRectangle(cornerRadius: 14))
                 Button("거절하기") { submit(reason); dismiss() }
                     .frame(maxWidth: .infinity, minHeight: 52)
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(.white)
                     .background(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.goneBrandPrimary.opacity(0.45) : Color.goneStatusError, in: RoundedRectangle(cornerRadius: 14))
                     .disabled(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
