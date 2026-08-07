@@ -117,6 +117,7 @@ private struct StudentOutingLandingView: View {
 private struct OutingRequestForm: View {
     let searchTeachers: (String) async -> [OutingTeacher]
     let submit: (OutingDraft) -> Bool
+    let submitTitle: String
     @Environment(\.dismiss) private var dismiss
     @State private var draft: OutingDraft
     @State private var reason: String
@@ -129,9 +130,15 @@ private struct OutingRequestForm: View {
     private let lunch = (12 * 60 + 30, 13 * 60 + 30)
     private let dinner = (18 * 60 + 10, 19 * 60 + 10)
 
-    init(initialDraft: OutingDraft = OutingDraft(), searchTeachers: @escaping (String) async -> [OutingTeacher], submit: @escaping (OutingDraft) -> Bool) {
+    init(
+        initialDraft: OutingDraft = OutingDraft(),
+        submitTitle: String = "외출 신청하기",
+        searchTeachers: @escaping (String) async -> [OutingTeacher],
+        submit: @escaping (OutingDraft) -> Bool
+    ) {
         self.searchTeachers = searchTeachers
         self.submit = submit
+        self.submitTitle = submitTitle
         _draft = State(initialValue: initialDraft)
         _reason = State(initialValue: initialDraft.reason)
     }
@@ -175,17 +182,18 @@ private struct OutingRequestForm: View {
                     .buttonStyle(.plain)
                 }
                 formField(title: "외출 사유") {
-                    TextField("외출 사유를 입력해 주세요", text: $reason)
+                    TextField("외출 사유를 입력해 주세요", text: $reason, axis: .vertical)
                         .focused($isReasonFocused)
                         .font(.body)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .frame(height: 54)
+                        .lineLimit(3, reservesSpace: true)
+                        .frame(minHeight: 78, alignment: .topLeading)
                         .padding(.horizontal, GONESpacing.small)
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
                 GONEPrimaryButton(
-                    title: "외출 신청하기",
+                    title: submitTitle,
                     isEnabled: selectedTimeMode != nil,
                     isLoading: isSubmitting,
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
@@ -341,6 +349,7 @@ private struct StudentOutingDetailView: View {
         .navigationDestination(isPresented: $isEditing) {
             OutingRequestForm(
                 initialDraft: OutingDraft(outing: outing),
+                submitTitle: "외출 수정",
                 searchTeachers: searchTeachers
             ) { draft in
                 guard let updated = update(outing, draft) else { return false }
