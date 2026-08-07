@@ -2,20 +2,32 @@ import SwiftUI
 
 struct OutingView: View {
     @ObservedObject var viewModel: OutingViewModel
-    @State private var isShowingForm = false
+    @State private var navigationPath: [OutingRoute] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if viewModel.isLoading {
                     ProgressView("외출 정보를 불러오는 중")
                 } else if viewModel.role == .teacher {
                     TeacherOutingListView(viewModel: viewModel)
                 } else {
-                    StudentOutingListView(viewModel: viewModel, isShowingForm: $isShowingForm)
+                    StudentOutingListView(viewModel: viewModel) {
+                        navigationPath.append(.requestForm)
+                    }
                 }
             }
             .background(Color.goneScreenBackground.ignoresSafeArea())
+            .navigationDestination(for: OutingRoute.self) { route in
+                switch route {
+                case .requestForm:
+                    OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
+                        let succeeded = await viewModel.submit(draft)
+                        if succeeded { navigationPath.removeAll() }
+                        return succeeded
+                    }
+                }
+            }
             .alert("외출 신청", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
@@ -29,15 +41,19 @@ struct OutingView: View {
     }
 }
 
+private enum OutingRoute: Hashable {
+    case requestForm
+}
+
 private struct StudentOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
-    @Binding var isShowingForm: Bool
+    let apply: () -> Void
     @State private var selectedOuting: OutingRequest?
 
     var body: some View {
         Group {
             if viewModel.outings.isEmpty {
-                StudentOutingLandingView { isShowingForm = true }
+                StudentOutingLandingView(apply: apply)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: GONESpacing.large) {
@@ -49,7 +65,7 @@ private struct StudentOutingListView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture { selectedOuting = outing }
                         }
-                        GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false) { isShowingForm = true }
+                        GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
                     }
                     .padding(.horizontal, GONESpacing.screenHorizontal)
                     .padding(.vertical, GONESpacing.xLarge)
@@ -58,13 +74,6 @@ private struct StudentOutingListView: View {
         }
         .navigationTitle(viewModel.outings.isEmpty ? "" : "외출")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $isShowingForm) {
-            OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
-                let succeeded = await viewModel.submit(draft)
-                if succeeded { isShowingForm = false }
-                return succeeded
-            }
-        }
         .navigationDestination(item: $selectedOuting) { outing in
             StudentOutingDetailView(
                 outing: outing,
@@ -92,12 +101,13 @@ private struct StudentOutingLandingView: View {
             Image("OutingHero")
                 .resizable().scaledToFit().frame(width: 210, height: 230)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, GONESpacing.large)
+                .padding(.top, 140)
             Spacer(minLength: 0)
             GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
         }
         .padding(.horizontal, GONESpacing.screenHorizontal)
-        .padding(.vertical, GONESpacing.xLarge)
+        .padding(.top, GONESpacing.xLarge + GONESpacing.medium)
+        .padding(.bottom, GONESpacing.xLarge)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
