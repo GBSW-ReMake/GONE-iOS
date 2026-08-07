@@ -28,8 +28,8 @@ final class OutingViewModel: ObservableObject {
 
     func submit(_ draft: OutingDraft) async -> Bool {
         do {
-            _ = try await repository.submit(draft)
-            await load()
+            let submittedOuting = try await repository.submit(draft)
+            outings.append(submittedOuting)
             return true
         } catch {
             errorMessage = error.localizedDescription
