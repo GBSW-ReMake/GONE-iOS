@@ -36,9 +36,7 @@ actor MockOutingRepository: OutingRepository {
 
     func submit(_ draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
-        guard let teacher = normalizedDraft.teacher else {
-            throw OutingRepositoryError.invalidDraft("담당 선생님을 선택해 주세요.")
-        }
+        let teacher = normalizedDraft.teacher ?? teachers[0]
         let student = OutingStudent(name: "김은찬", studentNumber: "3206")
         let overlaps = outings.contains { request in
             let isRejected: Bool
@@ -66,9 +64,7 @@ actor MockOutingRepository: OutingRepository {
 
     func update(_ outing: OutingRequest, with draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
-        guard let teacher = normalizedDraft.teacher else {
-            throw OutingRepositoryError.invalidDraft("담당 선생님을 선택해 주세요.")
-        }
+        let teacher = normalizedDraft.teacher ?? outing.teacher
         guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { throw OutingRepositoryError.notFound }
         let overlaps = outings.contains { request in
             guard request.id != outing.id else { return false }
