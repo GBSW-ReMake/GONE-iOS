@@ -23,7 +23,7 @@ struct OutingView: View {
                 switch route {
                 case .requestForm:
                     OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
-                        await viewModel.submit(draft)
+                        viewModel.submitPreview(draft)
                     }
                 }
             }
@@ -119,12 +119,9 @@ private struct OutingRequestForm: View {
     let submit: (OutingDraft) async -> Bool
     @Environment(\.dismiss) private var dismiss
     @State private var draft: OutingDraft
-    @State private var reason: String
     @State private var isSubmitting = false
     @State private var isShowingDatePicker = false
-    @State private var isShowingTeacherSearch = false
     @State private var selectedTimeMode: TimeSelectionMode?
-    @FocusState private var isReasonFocused: Bool
 
     private let lunch = (12 * 60 + 30, 13 * 60 + 30)
     private let dinner = (18 * 60 + 10, 19 * 60 + 10)
@@ -133,7 +130,6 @@ private struct OutingRequestForm: View {
         self.searchTeachers = searchTeachers
         self.submit = submit
         _draft = State(initialValue: initialDraft)
-        _reason = State(initialValue: initialDraft.reason)
     }
 
     var body: some View {
@@ -169,14 +165,13 @@ private struct OutingRequestForm: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 formField(title: "담당 선생님") {
-                    Button { isShowingTeacherSearch = true } label: {
-                        fieldLabel(draft.teacher?.name ?? "선생님 검색", icon: "magnifyingglass")
-                    }.buttonStyle(.plain)
+                    fieldLabel(draft.teacher?.name ?? "이00 선생님", icon: "person")
                 }
                 formField(title: "외출 사유") {
-                    TextField("외출 사유를 입력해 주세요", text: $reason, axis: .vertical)
-                        .focused($isReasonFocused)
-                        .lineLimit(5...8)
+                    Text(draft.reason.isEmpty ? "개인 사유" : draft.reason)
+                        .font(.body)
+                        .foregroundStyle(draft.reason.isEmpty ? Color.goneTextSecondary : Color.goneTextPrimary)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
                         .frame(minHeight: 120, alignment: .topLeading)
                         .padding(GONESpacing.small)
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
@@ -189,11 +184,9 @@ private struct OutingRequestForm: View {
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white
                 ) {
-                    isReasonFocused = false
                     isSubmitting = true
+                    let submissionDraft = normalizedDraft
                     Task {
-                        await Task.yield()
-                        let submissionDraft = normalizedDraft
                         let succeeded = await submit(submissionDraft)
                         if succeeded { dismiss() }
                         isSubmitting = false
@@ -210,9 +203,6 @@ private struct OutingRequestForm: View {
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: draft.date) { _, newDate in alignTimes(to: newDate) }
         .sheet(isPresented: $isShowingDatePicker) { DatePickerSheet(date: $draft.date) }
-        .sheet(isPresented: $isShowingTeacherSearch) {
-            OutingTeacherSearchSheet(search: searchTeachers) { draft.teacher = $0 }
-        }
     }
 
     private func formField<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -220,9 +210,18 @@ private struct OutingRequestForm: View {
     }
 
     private var normalizedDraft: OutingDraft {
-        var submissionDraft = draft
-        submissionDraft.reason = reason
-        return submissionDraft.normalizedToSelectedDate()
+        var previewDraft = draft
+        if previewDraft.reason.isEmpty {
+            previewDraft.reason = "개인 사유"
+        }
+        if previewDraft.teacher == nil {
+            previewDraft.teacher = OutingTeacher(
+                id: "teacher-preview",
+                name: "이00 선생님",
+                affiliation: "teacher"
+            )
+        }
+        return previewDraft.normalizedToSelectedDate()
     }
 
     private func timeModeButton(_ mode: TimeSelectionMode, title: String, minutes: (Int, Int)?) -> some View {

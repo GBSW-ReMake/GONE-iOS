@@ -38,6 +38,26 @@ final class OutingViewModel: ObservableObject {
         }
     }
 
+    func submitPreview(_ draft: OutingDraft) -> Bool {
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        let teacher = normalizedDraft.teacher ?? OutingTeacher(
+            id: "teacher-preview",
+            name: "이00 선생님",
+            affiliation: "teacher"
+        )
+        outings.append(OutingRequest(
+            id: "O-\(UUID().uuidString)",
+            student: OutingStudent(name: "김은찬", studentNumber: "3206"),
+            date: normalizedDraft.date,
+            departureTime: normalizedDraft.departureTime,
+            returnTime: normalizedDraft.returnTime,
+            reason: normalizedDraft.reason.isEmpty ? "개인 사유" : normalizedDraft.reason,
+            teacher: teacher,
+            status: .pendingApproval
+        ))
+        return true
+    }
+
     func update(_ outing: OutingRequest, with draft: OutingDraft) async -> Bool {
         do {
             _ = try await repository.update(outing, with: draft)
