@@ -104,6 +104,6 @@ enum OutingApplicationPeriod {
         if calendar.isDate(date, inSameDayAs: referenceDate) {
             return true
         }
-        weekRange(referenceDate: referenceDate, calendar: calendar).contains(calendar.startOfDay(for: date))
+        return weekRange(referenceDate: referenceDate, calendar: calendar).contains(calendar.startOfDay(for: date))
     }
 }
