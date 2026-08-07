@@ -39,26 +39,48 @@ private struct StudentOutingListView: View {
     @Binding var isShowingForm: Bool
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: GONESpacing.large) {
-                Text("외출 신청").font(.largeTitle.bold())
-                Text("이번 주 안에서만 신청할 수 있으며, 시간이 겹치지 않으면 여러 건을 신청할 수 있어요.")
-                    .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
-                ForEach(viewModel.outings) { outing in
-                    StudentOutingCard(outing: outing) { Task { await viewModel.cancel(outing) } }
-                }
-                if viewModel.outings.isEmpty {
-                    ContentUnavailableView("신청한 외출이 없어요", systemImage: "figure.walk")
-                }
-                GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false) {
-                    isShowingForm = true
+        Group {
+            if viewModel.outings.isEmpty {
+                StudentOutingLandingView { isShowingForm = true }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: GONESpacing.large) {
+                        Text("외출 신청").font(.largeTitle.bold())
+                        Text("이번 주 안에서만 신청할 수 있으며, 시간이 겹치지 않으면 여러 건을 신청할 수 있어요.")
+                            .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
+                        ForEach(viewModel.outings) { outing in
+                            StudentOutingCard(outing: outing) { Task { await viewModel.cancel(outing) } }
+                        }
+                        GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false) { isShowingForm = true }
+                    }
+                    .padding(.horizontal, GONESpacing.screenHorizontal)
+                    .padding(.vertical, GONESpacing.xLarge)
                 }
             }
-            .padding(.horizontal, GONESpacing.screenHorizontal)
-            .padding(.vertical, GONESpacing.xLarge)
         }
         .navigationTitle("외출")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct StudentOutingLandingView: View {
+    let apply: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
+            Text("외출 신청").font(.largeTitle.bold())
+            Text("외출이 필요한가요?").font(.headline.weight(.bold))
+            Text("외출 날짜와 시간을 입력해 담당 선생님께\n승인을 요청할 수 있습니다.")
+                .font(.subheadline).foregroundStyle(Color.goneTextSecondary).lineSpacing(3)
+            Image("OutingHero")
+                .resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 230)
+                .padding(.vertical, GONESpacing.large)
+            Spacer(minLength: 0)
+            GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
+        }
+        .padding(.horizontal, GONESpacing.screenHorizontal)
+        .padding(.vertical, GONESpacing.xLarge)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -69,6 +91,7 @@ private struct OutingRequestForm: View {
     @State private var isSubmitting = false
     @State private var isShowingDatePicker = false
     @State private var isShowingTeacherSearch = false
+    @State private var selectedTimeMode: TimeSelectionMode?
 
     private let lunch = (11 * 60 + 50, 13 * 60 + 10)
     private let dinner = (17 * 60 + 30, 19 * 60)
@@ -87,20 +110,24 @@ private struct OutingRequestForm: View {
                     }.buttonStyle(.plain)
                 }
                 VStack(alignment: .leading, spacing: GONESpacing.small) {
-                    Text("시간 프리셋").font(.headline)
-                    HStack(spacing: GONESpacing.medium) {
-                        presetButton("점심", minutes: lunch)
-                        presetButton("저녁", minutes: dinner)
+                    Text("시간 선택").font(.headline)
+                    HStack(spacing: GONESpacing.small) {
+                        timeModeButton(.lunch, title: "점심", minutes: lunch)
+                        timeModeButton(.dinner, title: "저녁", minutes: dinner)
+                        timeModeButton(.custom, title: "직접 설정", minutes: nil)
                     }
                 }
-                VStack(alignment: .leading, spacing: GONESpacing.small) {
-                    Text("직접 시간 설정").font(.headline)
-                    HStack(spacing: GONESpacing.medium) {
-                        DatePicker("출발", selection: $draft.departureTime, displayedComponents: .hourAndMinute).datePickerStyle(.compact)
-                        DatePicker("복귀", selection: $draft.returnTime, displayedComponents: .hourAndMinute).datePickerStyle(.compact)
+                if selectedTimeMode == .custom {
+                    VStack(alignment: .leading, spacing: GONESpacing.small) {
+                        Text("직접 시간 설정").font(.headline)
+                        HStack(spacing: GONESpacing.medium) {
+                            DatePicker("출발", selection: $draft.departureTime, in: timeRange, displayedComponents: .hourAndMinute).datePickerStyle(.compact)
+                            DatePicker("복귀", selection: $draft.returnTime, in: timeRange, displayedComponents: .hourAndMinute).datePickerStyle(.compact)
+                        }
+                        .padding(GONESpacing.medium)
+                        .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .padding(GONESpacing.medium)
-                    .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 formField(title: "담당 선생님") {
                     Button { isShowingTeacherSearch = true } label: {
@@ -117,7 +144,7 @@ private struct OutingRequestForm: View {
                 if let message = draft.validationMessage {
                     Text(message).font(.footnote).foregroundStyle(Color.goneStatusError)
                 }
-                GONEPrimaryButton(title: "외출 신청하기", isEnabled: draft.isValid, isLoading: isSubmitting) {
+                GONEPrimaryButton(title: "외출 신청하기", isEnabled: selectedTimeMode != nil && draft.isValid, isLoading: isSubmitting) {
                     isSubmitting = true
                     Task { await submit(draft); isSubmitting = false }
                 }
@@ -128,6 +155,7 @@ private struct OutingRequestForm: View {
         .background(Color.goneScreenBackground.ignoresSafeArea())
         .navigationTitle("외출 신청")
         .navigationBarTitleDisplayMode(.inline)
+        .animation(.easeInOut(duration: 0.24), value: selectedTimeMode)
         .onChange(of: draft.date) { _, newDate in alignTimes(to: newDate) }
         .sheet(isPresented: $isShowingDatePicker) { DatePickerSheet(date: $draft.date) }
         .sheet(isPresented: $isShowingTeacherSearch) {
@@ -139,12 +167,16 @@ private struct OutingRequestForm: View {
         VStack(alignment: .leading, spacing: GONESpacing.small) { Text(title).font(.headline); content() }
     }
 
-    private func presetButton(_ title: String, minutes: (Int, Int)) -> some View {
-        Button(title) { setTime(start: minutes.0, end: minutes.1) }
-            .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 46)
-            .foregroundStyle(Color.goneBrandPrimary)
-            .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.goneBrandPrimary.opacity(0.35)))
+    private func timeModeButton(_ mode: TimeSelectionMode, title: String, minutes: (Int, Int)?) -> some View {
+        Button {
+            selectedTimeMode = mode
+            if let minutes { setTime(start: minutes.0, end: minutes.1) }
+        } label: {
+            Text(title).font(.caption.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 46)
+        }
+        .foregroundStyle(selectedTimeMode == mode ? .white : Color.goneBrandPrimary)
+        .background(selectedTimeMode == mode ? Color.goneBrandPrimary : Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.goneBrandPrimary.opacity(0.35)))
     }
 
     private func fieldLabel(_ title: String, icon: String) -> some View {
@@ -168,7 +200,17 @@ private struct OutingRequestForm: View {
         draft.departureTime = calendar.date(bySettingHour: departure.hour ?? 8, minute: departure.minute ?? 40, second: 0, of: day) ?? day
         draft.returnTime = calendar.date(bySettingHour: returnTime.hour ?? 9, minute: returnTime.minute ?? 10, second: 0, of: day) ?? day
     }
+
+    private var timeRange: ClosedRange<Date> {
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: draft.date)
+        let start = calendar.date(bySettingHour: 8, minute: 40, second: 0, of: day) ?? day
+        let end = calendar.date(bySettingHour: 20, minute: 30, second: 0, of: day) ?? day
+        return start...end
+    }
 }
+
+private enum TimeSelectionMode: Equatable { case lunch, dinner, custom }
 
 private struct TeacherOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
