@@ -101,6 +101,9 @@ enum OutingApplicationPeriod {
     }
 
     static func contains(_ date: Date, referenceDate: Date = Date(), calendar: Calendar = .current) -> Bool {
+        if calendar.isDate(date, inSameDayAs: referenceDate) {
+            return true
+        }
         weekRange(referenceDate: referenceDate, calendar: calendar).contains(calendar.startOfDay(for: date))
     }
 }
