@@ -10,4 +10,5 @@ import Foundation
 struct LoginCredentials: Equatable {
     let identifier: String
     let password: String
+    let role: AccountRole
 }

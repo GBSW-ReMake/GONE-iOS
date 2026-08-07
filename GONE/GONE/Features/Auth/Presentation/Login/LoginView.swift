@@ -33,6 +33,12 @@ struct LoginView: View {
                 inputFields
                     .padding(.top, 34)
 
+                Picker("계정 유형", selection: $viewModel.role) {
+                    ForEach(AccountRole.allCases) { role in Text(role.title).tag(role) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.top, GONESpacing.xLarge)
+
                 signUpButton
                     .padding(.top, GONESpacing.xLarge)
             }
