@@ -58,6 +58,10 @@ final class OutingViewModel: ObservableObject {
         return true
     }
 
+    func cancelPreview(_ outing: OutingRequest) {
+        outings.removeAll { $0.id == outing.id }
+    }
+
     func update(_ outing: OutingRequest, with draft: OutingDraft) async -> Bool {
         do {
             _ = try await repository.update(outing, with: draft)

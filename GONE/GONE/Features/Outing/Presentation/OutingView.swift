@@ -52,7 +52,7 @@ private struct StudentOutingListView: View {
                         Text("이번 주 안에서만 신청할 수 있으며, 시간이 겹치지 않으면 여러 건을 신청할 수 있어요.")
                             .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
                         ForEach(viewModel.outings) { outing in
-                            StudentOutingCard(outing: outing) { Task { await viewModel.cancel(outing) } }
+                            StudentOutingCard(outing: outing) { viewModel.cancelPreview(outing) }
                                 .contentShape(Rectangle())
                                 .onTapGesture { selectedOuting = outing }
                         }
