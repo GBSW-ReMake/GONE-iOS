@@ -544,6 +544,7 @@ private struct DatePickerSheet: View {
 private struct StudentOutingCard: View {
     let outing: OutingRequest
     let cancel: () -> Void
+    @State private var isShowingCancelAlert = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
@@ -553,10 +554,21 @@ private struct StudentOutingCard: View {
                 .font(.headline.weight(.semibold))
             Text(outing.reason).font(.subheadline).foregroundStyle(Color.goneTextSecondary)
             Text("담당: \(outing.teacher.name)").font(.footnote).foregroundStyle(Color.goneTextSecondary)
-            if case .pendingApproval = outing.status { Button("신청 취소", role: .destructive, action: cancel).font(.footnote.weight(.semibold)) }
+            if case .pendingApproval = outing.status {
+                Button("신청 취소", role: .destructive) {
+                    isShowingCancelAlert = true
+                }
+                .font(.footnote.weight(.semibold))
+            }
         }
         .padding(GONESpacing.large).frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
+        .alert("외출 신청을 취소하시겠습니까?", isPresented: $isShowingCancelAlert) {
+            Button("취소하기", role: .destructive, action: cancel)
+            Button("닫기", role: .cancel) { }
+        } message: {
+            Text("취소한 신청은 다시 복구할 수 없습니다.")
+        }
     }
 }
 
