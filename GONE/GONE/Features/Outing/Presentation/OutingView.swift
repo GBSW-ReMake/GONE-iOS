@@ -13,6 +13,7 @@ struct OutingView: View {
                     TeacherOutingListView(viewModel: viewModel)
                 } else {
                     StudentOutingListView(viewModel: viewModel) {
+                        viewModel.errorMessage = nil
                         navigationPath.append(.requestForm)
                     }
                 }
@@ -26,14 +27,14 @@ struct OutingView: View {
                     }
                 }
             }
-            .alert("외출 신청", isPresented: Binding(
-                get: { viewModel.errorMessage != nil },
-                set: { if !$0 { viewModel.errorMessage = nil } }
-            )) {
-                Button("확인", role: .cancel) { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
+        }
+        .alert("외출 신청", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("확인", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
         .task { await viewModel.load() }
     }

@@ -36,7 +36,12 @@ actor MockOutingRepository: OutingRepository {
 
     func submit(_ draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
-        guard normalizedDraft.isValid, let teacher = normalizedDraft.teacher else { throw OutingRepositoryError.invalidDraft }
+        if let message = normalizedDraft.validationMessage {
+            throw OutingRepositoryError.invalidDraft(message)
+        }
+        guard let teacher = normalizedDraft.teacher else {
+            throw OutingRepositoryError.invalidDraft("담당 선생님을 선택해 주세요.")
+        }
         let student = OutingStudent(name: "김은찬", studentNumber: "3206")
         let overlaps = outings.contains { request in
             let isRejected: Bool
@@ -64,7 +69,12 @@ actor MockOutingRepository: OutingRepository {
 
     func update(_ outing: OutingRequest, with draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
-        guard normalizedDraft.isValid, let teacher = normalizedDraft.teacher else { throw OutingRepositoryError.invalidDraft }
+        if let message = normalizedDraft.validationMessage {
+            throw OutingRepositoryError.invalidDraft(message)
+        }
+        guard let teacher = normalizedDraft.teacher else {
+            throw OutingRepositoryError.invalidDraft("담당 선생님을 선택해 주세요.")
+        }
         guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { throw OutingRepositoryError.notFound }
         let overlaps = outings.contains { request in
             guard request.id != outing.id else { return false }
@@ -103,14 +113,14 @@ actor MockOutingRepository: OutingRepository {
 }
 
 enum OutingRepositoryError: LocalizedError {
-    case invalidDraft
+    case invalidDraft(String)
     case timeOverlap
     case missingRejectionReason
     case notFound
 
     var errorDescription: String? {
         switch self {
-        case .invalidDraft: "신청 내용을 확인해 주세요."
+        case .invalidDraft(let message): message
         case .timeOverlap: "같은 날짜에 시간이 겹치는 외출 신청이 있어요."
         case .missingRejectionReason: "거절 사유를 입력해 주세요."
         case .notFound: "외출 신청을 찾을 수 없어요."

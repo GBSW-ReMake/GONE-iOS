@@ -27,6 +27,7 @@ final class OutingViewModel: ObservableObject {
     }
 
     func submit(_ draft: OutingDraft) async -> Bool {
+        errorMessage = nil
         do {
             let submittedOuting = try await repository.submit(draft)
             outings.append(submittedOuting)
