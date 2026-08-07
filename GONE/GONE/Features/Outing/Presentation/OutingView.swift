@@ -22,9 +22,7 @@ struct OutingView: View {
                 switch route {
                 case .requestForm:
                     OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
-                        let succeeded = await viewModel.submit(draft)
-                        if succeeded { navigationPath.removeAll() }
-                        return succeeded
+                        await viewModel.submit(draft)
                     }
                 }
             }
@@ -126,12 +124,12 @@ private struct StudentOutingLandingView: View {
 private struct OutingRequestForm: View {
     let searchTeachers: (String) async -> [OutingTeacher]
     let submit: (OutingDraft) async -> Bool
+    @Environment(\.dismiss) private var dismiss
     @State private var draft: OutingDraft
     @State private var isSubmitting = false
     @State private var isShowingDatePicker = false
     @State private var isShowingTeacherSearch = false
     @State private var selectedTimeMode: TimeSelectionMode?
-    @State private var submissionMessage: String?
     @FocusState private var isReasonFocused: Bool
 
     private let lunch = (11 * 60 + 50, 13 * 60 + 10)
@@ -188,28 +186,23 @@ private struct OutingRequestForm: View {
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
-                if let message = submissionMessage ?? normalizedDraft.validationMessage {
+                if let message = normalizedDraft.validationMessage {
                     Text(message).font(.footnote).foregroundStyle(Color.goneStatusError)
                 }
                 GONEPrimaryButton(
                     title: "외출 신청하기",
-                    isEnabled: true,
+                    isEnabled: selectedTimeMode != nil && normalizedDraft.isValid,
                     isLoading: isSubmitting,
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white
                 ) {
+                    isSubmitting = true
                     let submissionDraft = normalizedDraft
-                    guard selectedTimeMode != nil else {
-                        submissionMessage = "시간을 선택해 주세요."
-                        return
+                    Task {
+                        let succeeded = await submit(submissionDraft)
+                        if succeeded { dismiss() }
+                        isSubmitting = false
                     }
-                    guard let message = submissionDraft.validationMessage else {
-                        isSubmitting = true
-                        submissionMessage = nil
-                        Task { _ = await submit(submissionDraft); isSubmitting = false }
-                        return
-                    }
-                    submissionMessage = message
                 }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -222,7 +215,6 @@ private struct OutingRequestForm: View {
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(TapGesture().onEnded { isReasonFocused = false })
         .onChange(of: draft.date) { _, newDate in alignTimes(to: newDate) }
-        .onChange(of: draft) { _, _ in submissionMessage = nil }
         .sheet(isPresented: $isShowingDatePicker) { DatePickerSheet(date: $draft.date) }
         .sheet(isPresented: $isShowingTeacherSearch) {
             OutingTeacherSearchSheet(search: searchTeachers) { draft.teacher = $0 }
