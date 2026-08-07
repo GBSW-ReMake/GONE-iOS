@@ -16,13 +16,6 @@ struct OutingView: View {
                 }
             }
             .background(Color.goneScreenBackground.ignoresSafeArea())
-            .navigationDestination(isPresented: $isShowingForm) {
-                OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
-                    let succeeded = await viewModel.submit(draft)
-                    if succeeded { isShowingForm = false }
-                    return succeeded
-                }
-            }
             .alert("외출 신청", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
@@ -65,6 +58,13 @@ private struct StudentOutingListView: View {
         }
         .navigationTitle(viewModel.outings.isEmpty ? "" : "외출")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $isShowingForm) {
+            OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
+                let succeeded = await viewModel.submit(draft)
+                if succeeded { isShowingForm = false }
+                return succeeded
+            }
+        }
         .navigationDestination(item: $selectedOuting) { outing in
             StudentOutingDetailView(
                 outing: outing,
@@ -92,7 +92,7 @@ private struct StudentOutingLandingView: View {
             Image("OutingHero")
                 .resizable().scaledToFit().frame(width: 210, height: 230)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, GONESpacing.large)
+                .padding(.top, GONESpacing.large)
             Spacer(minLength: 0)
             GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
         }
