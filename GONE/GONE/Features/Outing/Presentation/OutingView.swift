@@ -101,7 +101,7 @@ private struct StudentOutingLandingView: View {
             Image("OutingHero")
                 .resizable().scaledToFit().frame(width: 210, height: 230)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 140)
+                .padding(.top, 100)
             Spacer(minLength: 0)
             GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
         }
@@ -187,18 +187,19 @@ private struct OutingRequestForm: View {
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
-                if let message = draft.validationMessage {
+                if let message = normalizedDraft.validationMessage {
                     Text(message).font(.footnote).foregroundStyle(Color.goneStatusError)
                 }
                 GONEPrimaryButton(
                     title: "외출 신청하기",
-                    isEnabled: selectedTimeMode != nil && draft.isValid,
+                    isEnabled: selectedTimeMode != nil && normalizedDraft.isValid,
                     isLoading: isSubmitting,
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white
                 ) {
                     isSubmitting = true
-                    Task { _ = await submit(draft); isSubmitting = false }
+                    let submissionDraft = normalizedDraft
+                    Task { _ = await submit(submissionDraft); isSubmitting = false }
                 }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -219,6 +220,10 @@ private struct OutingRequestForm: View {
 
     private func formField<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) { Text(title).font(.headline); content() }
+    }
+
+    private var normalizedDraft: OutingDraft {
+        draft.normalizedToSelectedDate()
     }
 
     private func timeModeButton(_ mode: TimeSelectionMode, title: String, minutes: (Int, Int)?) -> some View {

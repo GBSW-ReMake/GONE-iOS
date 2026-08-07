@@ -65,6 +65,27 @@ struct OutingDraft: Equatable, Hashable {
 
     nonisolated var isValid: Bool { validationMessage == nil }
 
+    nonisolated func normalizedToSelectedDate() -> OutingDraft {
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: date)
+        var normalized = self
+        let departure = calendar.dateComponents([.hour, .minute], from: departureTime)
+        let returnTime = calendar.dateComponents([.hour, .minute], from: returnTime)
+        normalized.departureTime = calendar.date(
+            bySettingHour: departure.hour ?? 8,
+            minute: departure.minute ?? 40,
+            second: 0,
+            of: day
+        ) ?? day
+        normalized.returnTime = calendar.date(
+            bySettingHour: returnTime.hour ?? 9,
+            minute: returnTime.minute ?? 10,
+            second: 0,
+            of: day
+        ) ?? day
+        return normalized
+    }
+
     nonisolated private func minute(of date: Date) -> Int {
         let components = Calendar.current.dateComponents([.hour, .minute], from: date)
         return (components.hour ?? 0) * 60 + (components.minute ?? 0)

@@ -35,23 +35,24 @@ actor MockOutingRepository: OutingRepository {
     }
 
     func submit(_ draft: OutingDraft) async throws -> OutingRequest {
-        guard draft.isValid, let teacher = draft.teacher else { throw OutingRepositoryError.invalidDraft }
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        guard normalizedDraft.isValid, let teacher = normalizedDraft.teacher else { throw OutingRepositoryError.invalidDraft }
         let overlaps = outings.contains { request in
             let isRejected: Bool
             if case .rejected = request.status { isRejected = true } else { isRejected = false }
             return !isRejected
-                && Calendar.current.isDate(request.date, inSameDayAs: draft.date)
-                && draft.departureTime < request.returnTime
-                && draft.returnTime > request.departureTime
+                && Calendar.current.isDate(request.date, inSameDayAs: normalizedDraft.date)
+                && normalizedDraft.departureTime < request.returnTime
+                && normalizedDraft.returnTime > request.departureTime
         }
         guard !overlaps else { throw OutingRepositoryError.timeOverlap }
         let request = OutingRequest(
             id: "O-\(String(format: "%03d", outings.count + 1))",
             student: OutingStudent(name: "김은찬", studentNumber: "3206"),
-            date: draft.date,
-            departureTime: draft.departureTime,
-            returnTime: draft.returnTime,
-            reason: draft.reason.trimmingCharacters(in: .whitespacesAndNewlines),
+            date: normalizedDraft.date,
+            departureTime: normalizedDraft.departureTime,
+            returnTime: normalizedDraft.returnTime,
+            reason: normalizedDraft.reason.trimmingCharacters(in: .whitespacesAndNewlines),
             teacher: teacher,
             status: .pendingApproval
         )
@@ -60,23 +61,24 @@ actor MockOutingRepository: OutingRepository {
     }
 
     func update(_ outing: OutingRequest, with draft: OutingDraft) async throws -> OutingRequest {
-        guard draft.isValid, let teacher = draft.teacher else { throw OutingRepositoryError.invalidDraft }
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        guard normalizedDraft.isValid, let teacher = normalizedDraft.teacher else { throw OutingRepositoryError.invalidDraft }
         guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { throw OutingRepositoryError.notFound }
         let overlaps = outings.contains { request in
             guard request.id != outing.id else { return false }
             if case .rejected = request.status { return false }
-            return Calendar.current.isDate(request.date, inSameDayAs: draft.date)
-                && draft.departureTime < request.returnTime
-                && draft.returnTime > request.departureTime
+            return Calendar.current.isDate(request.date, inSameDayAs: normalizedDraft.date)
+                && normalizedDraft.departureTime < request.returnTime
+                && normalizedDraft.returnTime > request.departureTime
         }
         guard !overlaps else { throw OutingRepositoryError.timeOverlap }
         let updated = OutingRequest(
             id: outing.id,
             student: outing.student,
-            date: draft.date,
-            departureTime: draft.departureTime,
-            returnTime: draft.returnTime,
-            reason: draft.reason.trimmingCharacters(in: .whitespacesAndNewlines),
+            date: normalizedDraft.date,
+            departureTime: normalizedDraft.departureTime,
+            returnTime: normalizedDraft.returnTime,
+            reason: normalizedDraft.reason.trimmingCharacters(in: .whitespacesAndNewlines),
             teacher: teacher,
             status: outing.status
         )
