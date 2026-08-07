@@ -187,8 +187,10 @@ private struct OutingRequestForm: View {
                         .font(.body)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(3, reservesSpace: true)
-                        .frame(minHeight: 78, alignment: .topLeading)
-                        .padding(.horizontal, GONESpacing.small)
+                        .padding(.horizontal, GONESpacing.medium)
+                        .padding(.top, GONESpacing.medium)
+                        .padding(.bottom, GONESpacing.small)
+                        .frame(minHeight: 88, alignment: .topLeading)
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
