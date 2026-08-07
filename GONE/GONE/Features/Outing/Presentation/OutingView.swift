@@ -48,7 +48,7 @@ private struct StudentOutingListView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: GONESpacing.large) {
-                        Text("외출 신청").font(.largeTitle.bold())
+                        Text("외출 신청").font(.title2.bold())
                         Text("이번 주 안에서만 신청할 수 있으며, 시간이 겹치지 않으면 여러 건을 신청할 수 있어요.")
                             .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
                         ForEach(viewModel.outings) { outing in
@@ -116,20 +116,24 @@ private struct StudentOutingLandingView: View {
 
 private struct OutingRequestForm: View {
     let searchTeachers: (String) async -> [OutingTeacher]
-    let submit: (OutingDraft) async -> Bool
+    let submit: (OutingDraft) -> Bool
     @Environment(\.dismiss) private var dismiss
     @State private var draft: OutingDraft
+    @State private var reason: String
     @State private var isSubmitting = false
     @State private var isShowingDatePicker = false
+    @State private var isShowingTeacherSearch = false
     @State private var selectedTimeMode: TimeSelectionMode?
+    @FocusState private var isReasonFocused: Bool
 
     private let lunch = (12 * 60 + 30, 13 * 60 + 30)
     private let dinner = (18 * 60 + 10, 19 * 60 + 10)
 
-    init(initialDraft: OutingDraft = OutingDraft(), searchTeachers: @escaping (String) async -> [OutingTeacher], submit: @escaping (OutingDraft) async -> Bool) {
+    init(initialDraft: OutingDraft = OutingDraft(), searchTeachers: @escaping (String) async -> [OutingTeacher], submit: @escaping (OutingDraft) -> Bool) {
         self.searchTeachers = searchTeachers
         self.submit = submit
         _draft = State(initialValue: initialDraft)
+        _reason = State(initialValue: initialDraft.reason)
     }
 
     var body: some View {
@@ -165,15 +169,18 @@ private struct OutingRequestForm: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 formField(title: "담당 선생님") {
-                    fieldLabel(draft.teacher?.name ?? "이00 선생님", icon: "person")
+                    Button { isShowingTeacherSearch = true } label: {
+                        fieldLabel(draft.teacher?.name ?? "선생님 검색", icon: "magnifyingglass")
+                    }
+                    .buttonStyle(.plain)
                 }
                 formField(title: "외출 사유") {
-                    Text(draft.reason.isEmpty ? "개인 사유" : draft.reason)
+                    TextField("외출 사유를 입력해 주세요", text: $reason)
+                        .focused($isReasonFocused)
                         .font(.body)
-                        .foregroundStyle(draft.reason.isEmpty ? Color.goneTextSecondary : Color.goneTextPrimary)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .frame(minHeight: 120, alignment: .topLeading)
-                        .padding(GONESpacing.small)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: 54)
+                        .padding(.horizontal, GONESpacing.small)
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
@@ -184,12 +191,16 @@ private struct OutingRequestForm: View {
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white
                 ) {
+                    guard !isSubmitting else { return }
                     isSubmitting = true
-                    let submissionDraft = normalizedDraft
-                    Task {
-                        let succeeded = await submit(submissionDraft)
-                        if succeeded { dismiss() }
-                        isSubmitting = false
+                    isReasonFocused = false
+                    DispatchQueue.main.async {
+                        let succeeded = submit(normalizedDraft)
+                        if succeeded {
+                            dismiss()
+                        } else {
+                            isSubmitting = false
+                        }
                     }
                 }
             }
@@ -203,6 +214,9 @@ private struct OutingRequestForm: View {
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: draft.date) { _, newDate in alignTimes(to: newDate) }
         .sheet(isPresented: $isShowingDatePicker) { DatePickerSheet(date: $draft.date) }
+        .sheet(isPresented: $isShowingTeacherSearch) {
+            OutingTeacherSearchSheet(search: searchTeachers) { draft.teacher = $0 }
+        }
     }
 
     private func formField<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -211,9 +225,7 @@ private struct OutingRequestForm: View {
 
     private var normalizedDraft: OutingDraft {
         var previewDraft = draft
-        if previewDraft.reason.isEmpty {
-            previewDraft.reason = "개인 사유"
-        }
+        previewDraft.reason = reason
         if previewDraft.teacher == nil {
             previewDraft.teacher = OutingTeacher(
                 id: "teacher-preview",
