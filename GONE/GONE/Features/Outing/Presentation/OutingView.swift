@@ -90,7 +90,7 @@ private struct StudentOutingLandingView: View {
                     .font(.subheadline).foregroundStyle(Color.goneTextSecondary).lineSpacing(3)
             }
             Image("OutingHero")
-                .resizable().scaledToFit().frame(width: 250, height: 230)
+                .resizable().scaledToFit().frame(width: 210, height: 230)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, GONESpacing.large)
             Spacer(minLength: 0)
@@ -103,8 +103,8 @@ private struct StudentOutingLandingView: View {
 
     private var landingTitle: some View {
         let components = Calendar.current.dateComponents([.month, .day], from: Date())
-        return HStack(spacing: 0) {
-            Text("\(components.month ?? 0)월 \(components.day ?? 0)일 ")
+        return HStack(spacing: 2) {
+            Text("\(components.month ?? 0)월 \(components.day ?? 0)일")
                 .foregroundStyle(Color.goneBrandPrimary)
             Text("외출 신청")
                 .foregroundStyle(Color.goneTextPrimary)
