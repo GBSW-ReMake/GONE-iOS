@@ -15,7 +15,7 @@ actor MockOutingRepository: OutingRepository {
         let returnTime = calendar.date(byAdding: .minute, value: 12 * 60 + 40, to: today) ?? today
         outings = [OutingRequest(
             id: "O-001",
-            student: OutingStudent(name: "김은찬", studentNumber: "3206"),
+            student: OutingStudent(name: "박지민", studentNumber: "20314"),
             date: today,
             departureTime: departure,
             returnTime: returnTime,
