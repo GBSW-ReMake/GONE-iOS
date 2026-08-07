@@ -62,6 +62,23 @@ final class OutingViewModel: ObservableObject {
         outings.removeAll { $0.id == outing.id }
     }
 
+    func updatePreview(_ outing: OutingRequest, with draft: OutingDraft) -> OutingRequest? {
+        guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { return nil }
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        let updated = OutingRequest(
+            id: outing.id,
+            student: outing.student,
+            date: normalizedDraft.date,
+            departureTime: normalizedDraft.departureTime,
+            returnTime: normalizedDraft.returnTime,
+            reason: normalizedDraft.reason.isEmpty ? outing.reason : normalizedDraft.reason,
+            teacher: normalizedDraft.teacher ?? outing.teacher,
+            status: outing.status
+        )
+        outings[index] = updated
+        return updated
+    }
+
     func update(_ outing: OutingRequest, with draft: OutingDraft) async -> Bool {
         do {
             _ = try await repository.update(outing, with: draft)

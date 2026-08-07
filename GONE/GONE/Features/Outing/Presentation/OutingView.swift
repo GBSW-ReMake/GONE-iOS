@@ -69,7 +69,7 @@ private struct StudentOutingListView: View {
             StudentOutingDetailView(
                 outing: outing,
                 searchTeachers: viewModel.searchTeachers,
-                update: viewModel.update
+                update: viewModel.updatePreview
             )
         }
     }
@@ -287,10 +287,10 @@ private enum TimeSelectionMode: Equatable { case lunch, dinner, custom }
 private struct StudentOutingDetailView: View {
     @State private var outing: OutingRequest
     let searchTeachers: (String) async -> [OutingTeacher]
-    let update: (OutingRequest, OutingDraft) async -> Bool
+    let update: (OutingRequest, OutingDraft) -> OutingRequest?
     @State private var isEditing = false
 
-    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) async -> Bool) {
+    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?) {
         _outing = State(initialValue: outing)
         self.searchTeachers = searchTeachers
         self.update = update
@@ -331,12 +331,9 @@ private struct StudentOutingDetailView: View {
                 initialDraft: OutingDraft(outing: outing),
                 searchTeachers: searchTeachers
             ) { draft in
-                let succeeded = await update(outing, draft)
-                if succeeded {
-                    outing = outing.updated(with: draft)
-                    isEditing = false
-                }
-                return succeeded
+                guard let updated = update(outing, draft) else { return false }
+                outing = updated
+                return true
             }
         }
     }
