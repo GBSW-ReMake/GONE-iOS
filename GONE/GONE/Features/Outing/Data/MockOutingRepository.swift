@@ -59,6 +59,31 @@ actor MockOutingRepository: OutingRepository {
         return request
     }
 
+    func update(_ outing: OutingRequest, with draft: OutingDraft) async throws -> OutingRequest {
+        guard draft.isValid, let teacher = draft.teacher else { throw OutingRepositoryError.invalidDraft }
+        guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { throw OutingRepositoryError.notFound }
+        let overlaps = outings.contains { request in
+            guard request.id != outing.id else { return false }
+            if case .rejected = request.status { return false }
+            return Calendar.current.isDate(request.date, inSameDayAs: draft.date)
+                && draft.departureTime < request.returnTime
+                && draft.returnTime > request.departureTime
+        }
+        guard !overlaps else { throw OutingRepositoryError.timeOverlap }
+        let updated = OutingRequest(
+            id: outing.id,
+            student: outing.student,
+            date: draft.date,
+            departureTime: draft.departureTime,
+            returnTime: draft.returnTime,
+            reason: draft.reason.trimmingCharacters(in: .whitespacesAndNewlines),
+            teacher: teacher,
+            status: outing.status
+        )
+        outings[index] = updated
+        return updated
+    }
+
     func decide(_ outing: OutingRequest, approve: Bool, rejectionReason: String?) async throws -> OutingRequest {
         let trimmedReason = rejectionReason?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard approve || !trimmedReason.isEmpty else { throw OutingRepositoryError.missingRejectionReason }

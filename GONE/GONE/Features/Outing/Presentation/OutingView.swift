@@ -18,7 +18,9 @@ struct OutingView: View {
             .background(Color.goneScreenBackground.ignoresSafeArea())
             .navigationDestination(isPresented: $isShowingForm) {
                 OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
-                    if await viewModel.submit(draft) { isShowingForm = false }
+                    let succeeded = await viewModel.submit(draft)
+                    if succeeded { isShowingForm = false }
+                    return succeeded
                 }
             }
             .alert("외출 신청", isPresented: Binding(
@@ -37,6 +39,7 @@ struct OutingView: View {
 private struct StudentOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
     @Binding var isShowingForm: Bool
+    @State private var selectedOuting: OutingRequest?
 
     var body: some View {
         Group {
@@ -50,6 +53,8 @@ private struct StudentOutingListView: View {
                             .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
                         ForEach(viewModel.outings) { outing in
                             StudentOutingCard(outing: outing) { Task { await viewModel.cancel(outing) } }
+                                .contentShape(Rectangle())
+                                .onTapGesture { selectedOuting = outing }
                         }
                         GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false) { isShowingForm = true }
                     }
@@ -60,6 +65,13 @@ private struct StudentOutingListView: View {
         }
         .navigationTitle(viewModel.outings.isEmpty ? "" : "외출")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $selectedOuting) { outing in
+            StudentOutingDetailView(
+                outing: outing,
+                searchTeachers: viewModel.searchTeachers,
+                update: viewModel.update
+            )
+        }
     }
 }
 
@@ -78,7 +90,8 @@ private struct StudentOutingLandingView: View {
                     .font(.subheadline).foregroundStyle(Color.goneTextSecondary).lineSpacing(3)
             }
             Image("OutingHero")
-                .resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 230)
+                .resizable().scaledToFit().frame(width: 250, height: 230)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, GONESpacing.large)
             Spacer(minLength: 0)
             GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
@@ -96,14 +109,14 @@ private struct StudentOutingLandingView: View {
             Text("외출 신청")
                 .foregroundStyle(Color.goneTextPrimary)
         }
-        .font(.largeTitle.bold())
+        .font(.title.bold())
     }
 }
 
 private struct OutingRequestForm: View {
     let searchTeachers: (String) async -> [OutingTeacher]
-    let submit: (OutingDraft) async -> Void
-    @State private var draft = OutingDraft()
+    let submit: (OutingDraft) async -> Bool
+    @State private var draft: OutingDraft
     @State private var isSubmitting = false
     @State private var isShowingDatePicker = false
     @State private var isShowingTeacherSearch = false
@@ -112,6 +125,12 @@ private struct OutingRequestForm: View {
 
     private let lunch = (11 * 60 + 50, 13 * 60 + 10)
     private let dinner = (17 * 60 + 30, 19 * 60)
+
+    init(initialDraft: OutingDraft = OutingDraft(), searchTeachers: @escaping (String) async -> [OutingTeacher], submit: @escaping (OutingDraft) async -> Bool) {
+        self.searchTeachers = searchTeachers
+        self.submit = submit
+        _draft = State(initialValue: initialDraft)
+    }
 
     var body: some View {
         ScrollView {
@@ -169,7 +188,7 @@ private struct OutingRequestForm: View {
                     disabledForeground: .white
                 ) {
                     isSubmitting = true
-                    Task { await submit(draft); isSubmitting = false }
+                    Task { _ = await submit(draft); isSubmitting = false }
                 }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -251,6 +270,71 @@ private struct OutingRequestForm: View {
 }
 
 private enum TimeSelectionMode: Equatable { case lunch, dinner, custom }
+
+private struct StudentOutingDetailView: View {
+    @State private var outing: OutingRequest
+    let searchTeachers: (String) async -> [OutingTeacher]
+    let update: (OutingRequest, OutingDraft) async -> Bool
+    @State private var isEditing = false
+
+    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) async -> Bool) {
+        _outing = State(initialValue: outing)
+        self.searchTeachers = searchTeachers
+        self.update = update
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: GONESpacing.large) {
+                statusBadge(outing.status)
+                    .padding(.bottom, 4)
+                HStack(spacing: 5) {
+                    Text(outing.student.studentNumber).font(.title2.bold())
+                    Text(outing.student.name).font(.title2.bold()).foregroundStyle(Color.goneBrandPrimary)
+                    Text("외출").font(.title2.bold())
+                }
+                detailRow("학적 정보", outing.student.studentNumber)
+                detailRow("날짜", dateText(outing.date))
+                detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
+                detailRow("사유", outing.reason)
+                detailRow("지정 선생님", outing.teacher.name)
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+            .padding(.vertical, GONESpacing.xLarge)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .navigationTitle("외출 상세")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if case .pendingApproval = outing.status {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("수정") { isEditing = true }
+                        .font(.subheadline.weight(.semibold))
+                }
+            }
+        }
+        .navigationDestination(isPresented: $isEditing) {
+            OutingRequestForm(
+                initialDraft: OutingDraft(outing: outing),
+                searchTeachers: searchTeachers
+            ) { draft in
+                let succeeded = await update(outing, draft)
+                if succeeded {
+                    outing = outing.updated(with: draft)
+                    isEditing = false
+                }
+                return succeeded
+            }
+        }
+    }
+
+    private func detailRow(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.footnote).foregroundStyle(Color.goneTextSecondary)
+            Text(value).font(.body)
+        }
+    }
+}
 
 private struct TeacherOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
@@ -473,6 +557,31 @@ private struct StudentOutingCard: View {
         }
         .padding(GONESpacing.large).frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+private extension OutingDraft {
+    init(outing: OutingRequest) {
+        date = outing.date
+        departureTime = outing.departureTime
+        returnTime = outing.returnTime
+        reason = outing.reason
+        teacher = outing.teacher
+    }
+}
+
+private extension OutingRequest {
+    func updated(with draft: OutingDraft) -> OutingRequest {
+        OutingRequest(
+            id: id,
+            student: student,
+            date: draft.date,
+            departureTime: draft.departureTime,
+            returnTime: draft.returnTime,
+            reason: draft.reason,
+            teacher: draft.teacher ?? teacher,
+            status: status
+        )
     }
 }
 

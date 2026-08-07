@@ -37,6 +37,17 @@ final class OutingViewModel: ObservableObject {
         }
     }
 
+    func update(_ outing: OutingRequest, with draft: OutingDraft) async -> Bool {
+        do {
+            _ = try await repository.update(outing, with: draft)
+            await load()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     func decide(_ outing: OutingRequest, approve: Bool, rejectionReason: String? = nil) async -> Bool {
         do {
             _ = try await repository.decide(outing, approve: approve, rejectionReason: rejectionReason)
