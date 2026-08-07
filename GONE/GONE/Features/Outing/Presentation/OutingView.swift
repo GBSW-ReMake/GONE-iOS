@@ -119,6 +119,7 @@ private struct OutingRequestForm: View {
     let submit: (OutingDraft) async -> Bool
     @Environment(\.dismiss) private var dismiss
     @State private var draft: OutingDraft
+    @State private var reason: String
     @State private var isSubmitting = false
     @State private var isShowingDatePicker = false
     @State private var isShowingTeacherSearch = false
@@ -132,6 +133,7 @@ private struct OutingRequestForm: View {
         self.searchTeachers = searchTeachers
         self.submit = submit
         _draft = State(initialValue: initialDraft)
+        _reason = State(initialValue: initialDraft.reason)
     }
 
     var body: some View {
@@ -172,10 +174,11 @@ private struct OutingRequestForm: View {
                     }.buttonStyle(.plain)
                 }
                 formField(title: "외출 사유") {
-                    TextEditor(text: $draft.reason)
+                    TextField("외출 사유를 입력해 주세요", text: $reason, axis: .vertical)
                         .focused($isReasonFocused)
-                        .frame(minHeight: 120).padding(GONESpacing.small)
-                        .scrollContentBackground(.hidden)
+                        .lineLimit(5...8)
+                        .frame(minHeight: 120, alignment: .topLeading)
+                        .padding(GONESpacing.small)
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
@@ -186,9 +189,11 @@ private struct OutingRequestForm: View {
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white
                 ) {
+                    isReasonFocused = false
                     isSubmitting = true
-                    let submissionDraft = normalizedDraft
                     Task {
+                        await Task.yield()
+                        let submissionDraft = normalizedDraft
                         let succeeded = await submit(submissionDraft)
                         if succeeded { dismiss() }
                         isSubmitting = false
@@ -203,7 +208,6 @@ private struct OutingRequestForm: View {
         .navigationBarTitleDisplayMode(.inline)
         .animation(.easeInOut(duration: 0.24), value: selectedTimeMode)
         .scrollDismissesKeyboard(.interactively)
-        .simultaneousGesture(TapGesture().onEnded { isReasonFocused = false })
         .onChange(of: draft.date) { _, newDate in alignTimes(to: newDate) }
         .sheet(isPresented: $isShowingDatePicker) { DatePickerSheet(date: $draft.date) }
         .sheet(isPresented: $isShowingTeacherSearch) {
@@ -216,7 +220,9 @@ private struct OutingRequestForm: View {
     }
 
     private var normalizedDraft: OutingDraft {
-        draft.normalizedToSelectedDate()
+        var submissionDraft = draft
+        submissionDraft.reason = reason
+        return submissionDraft.normalizedToSelectedDate()
     }
 
     private func timeModeButton(_ mode: TimeSelectionMode, title: String, minutes: (Int, Int)?) -> some View {
