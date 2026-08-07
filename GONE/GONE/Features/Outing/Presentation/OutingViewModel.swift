@@ -27,8 +27,61 @@ final class OutingViewModel: ObservableObject {
     }
 
     func submit(_ draft: OutingDraft) async -> Bool {
+        errorMessage = nil
         do {
-            _ = try await repository.submit(draft)
+            let submittedOuting = try await repository.submit(draft)
+            outings.append(submittedOuting)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    func submitPreview(_ draft: OutingDraft) -> Bool {
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        let teacher = normalizedDraft.teacher ?? OutingTeacher(
+            id: "teacher-preview",
+            name: "이00 선생님",
+            affiliation: "teacher"
+        )
+        outings.append(OutingRequest(
+            id: "O-\(UUID().uuidString)",
+            student: OutingStudent(name: "김은찬", studentNumber: "3206"),
+            date: normalizedDraft.date,
+            departureTime: normalizedDraft.departureTime,
+            returnTime: normalizedDraft.returnTime,
+            reason: normalizedDraft.reason.isEmpty ? "개인 사유" : normalizedDraft.reason,
+            teacher: teacher,
+            status: .pendingApproval
+        ))
+        return true
+    }
+
+    func cancelPreview(_ outing: OutingRequest) {
+        outings.removeAll { $0.id == outing.id }
+    }
+
+    func updatePreview(_ outing: OutingRequest, with draft: OutingDraft) -> OutingRequest? {
+        guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { return nil }
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        let updated = OutingRequest(
+            id: outing.id,
+            student: outing.student,
+            date: normalizedDraft.date,
+            departureTime: normalizedDraft.departureTime,
+            returnTime: normalizedDraft.returnTime,
+            reason: normalizedDraft.reason.isEmpty ? outing.reason : normalizedDraft.reason,
+            teacher: normalizedDraft.teacher ?? outing.teacher,
+            status: outing.status
+        )
+        outings[index] = updated
+        return updated
+    }
+
+    func update(_ outing: OutingRequest, with draft: OutingDraft) async -> Bool {
+        do {
+            _ = try await repository.update(outing, with: draft)
             await load()
             return true
         } catch {
