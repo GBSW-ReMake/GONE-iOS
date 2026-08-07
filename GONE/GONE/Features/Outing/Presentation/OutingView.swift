@@ -186,7 +186,7 @@ private struct TeacherOutingListView: View {
                 Button { selectedOuting = outing } label: {
                     HStack(spacing: GONESpacing.medium) {
                         VStack(alignment: .leading, spacing: 5) {
-                            statusBadge(outing.status)
+                            statusBadge(outing.status).padding(.bottom, 4)
                             Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
                             HStack(spacing: 4) {
                                 Text(outing.student.studentNumber).font(.subheadline.weight(.semibold))
@@ -277,7 +277,7 @@ private struct TeacherOutingDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
                 statusBadge(outing.status)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 4)
                 HStack(spacing: 5) {
                     Text(outing.student.studentNumber).font(.title2.bold())
                     Text(outing.student.name).font(.title2.bold()).foregroundStyle(Color.goneBrandPrimary)
