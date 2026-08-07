@@ -3,7 +3,7 @@
 > **완료일**: 2026-08-08  
 > **작업 번호**: #18  
 > **관련 이슈**: [#18](https://github.com/GBSW-ReMake/GONE-iOS/issues/18)  
-> **PR**: 생성 예정  
+> **PR**: [#19](https://github.com/GBSW-ReMake/GONE-iOS/pull/19)
 > **브랜치**: `feat/18-outing-request-ui`
 
 ---
