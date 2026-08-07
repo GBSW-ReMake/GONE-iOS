@@ -25,6 +25,7 @@ final class LoginViewModel: ObservableObject {
             }
         }
     }
+    @Published var role: AccountRole = .student
 
     @Published private(set) var identifierErrorMessage: String?
     @Published private(set) var passwordErrorMessage: String?
@@ -45,7 +46,7 @@ final class LoginViewModel: ObservableObject {
             return nil
         }
 
-        return LoginCredentials(identifier: trimmedIdentifier, password: password)
+        return LoginCredentials(identifier: trimmedIdentifier, password: password, role: role)
     }
 
     func showServiceUnavailableMessage() {

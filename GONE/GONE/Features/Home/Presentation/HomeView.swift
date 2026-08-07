@@ -61,9 +61,7 @@ struct HomeView: View {
                 .font(.caption.weight(.semibold))
                 .tracking(1.2)
                 .foregroundStyle(Color.goneTextSecondary)
-            (Text("안녕하세요, ").foregroundStyle(Color.goneTextPrimary)
-             + Text(profile.name).foregroundStyle(Color.goneBrandPrimary)
-             + Text("님").foregroundStyle(Color.goneTextPrimary))
+            Text("안녕하세요, \(profile.name)님")
                 .font(.title2.weight(.bold))
                 .accessibilityLabel("안녕하세요, \(profile.name)님")
         }

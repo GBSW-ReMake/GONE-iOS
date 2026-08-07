@@ -5,17 +5,19 @@ enum AppTab: Hashable {
 }
 
 struct AppTabView: View {
+    let role: AccountRole
     @State private var selection: AppTab = .home
     @StateObject private var labReservationViewModel: LabReservationViewModel
     @StateObject private var outingViewModel: OutingViewModel
     @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
 
-    init() {
+    init(role: AccountRole = .student) {
+        self.role = role
         _labReservationViewModel = StateObject(
             wrappedValue: LabReservationViewModel(repository: MockLabReservationRepository())
         )
         _outingViewModel = StateObject(
-            wrappedValue: OutingViewModel(repository: MockOutingRepository())
+            wrappedValue: OutingViewModel(role: role, repository: MockOutingRepository())
         )
         _schoolCampingViewModel = StateObject(
             wrappedValue: SchoolCampingViewModel(repository: MockSchoolCampingRepository())
