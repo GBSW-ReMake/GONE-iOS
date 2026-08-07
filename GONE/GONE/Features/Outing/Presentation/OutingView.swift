@@ -172,27 +172,81 @@ private struct OutingRequestForm: View {
 
 private struct TeacherOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
+    @State private var filter: OutingFilter = .all
 
     var body: some View {
-        List(viewModel.outings) { outing in
-            NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
-                VStack(alignment: .leading, spacing: GONESpacing.small) {
-                    statusBadge(outing.status)
-                        .padding(.bottom, 4)
-                    HStack(spacing: 5) {
-                        Text(outing.student.studentNumber).font(.headline)
-                        Text(outing.student.name).font(.headline).foregroundStyle(Color.goneBrandPrimary)
-                        Text("외출").font(.headline)
+        VStack(alignment: .leading, spacing: GONESpacing.small) {
+            Text("외출 신청 목록")
+                .font(.title2.weight(.bold))
+                .padding(.horizontal, GONESpacing.screenHorizontal)
+                .padding(.top, GONESpacing.medium)
+            OutingFilterBar(selection: $filter)
+            List(filteredOutings) { outing in
+                NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                        HStack(spacing: 4) {
+                            Text(outing.student.studentNumber).font(.subheadline.weight(.semibold))
+                            Text(outing.student.name).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneBrandPrimary)
+                            Text("외출").font(.subheadline.weight(.semibold))
+                        }
+                        Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
+                            .font(.footnote.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                     }
-                    Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
-                    Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
-                        .font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
+                    .overlay(alignment: .topLeading) { statusBadge(outing.status).offset(y: -2) }
+                    .padding(.top, 34)
+                    .padding(.vertical, 2)
                 }
-                .padding(.vertical, 6)
+                .listRowBackground(Color.goneSurfacePrimary)
+            }
+            .listStyle(.plain)
+            .overlay {
+                if filteredOutings.isEmpty {
+                    ContentUnavailableView("해당 외출 신청이 없어요", systemImage: "line.3.horizontal.decrease.circle")
+                }
             }
         }
-        .navigationTitle("외출 신청 목록")
-        .overlay { if viewModel.outings.isEmpty { ContentUnavailableView("대기 중인 신청이 없어요", systemImage: "checkmark.circle") } }
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var filteredOutings: [OutingRequest] { viewModel.outings.filter { filter.includes($0.status) } }
+}
+
+private enum OutingFilter: String, CaseIterable, Identifiable {
+    case all = "전체"
+    case pending = "승인 요청"
+    case approved = "승인 완료"
+    case rejected = "거절됨"
+
+    var id: Self { self }
+
+    func includes(_ status: OutingRequest.Status) -> Bool {
+        switch self {
+        case .all: return true
+        case .pending: if case .pendingApproval = status { return true } else { return false }
+        case .approved: if case .approved = status { return true } else { return false }
+        case .rejected: if case .rejected = status { return true } else { return false }
+        }
+    }
+}
+
+private struct OutingFilterBar: View {
+    @Binding var selection: OutingFilter
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: GONESpacing.small) {
+                ForEach(OutingFilter.allCases) { filter in
+                    Button(filter.rawValue) { selection = filter }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(selection == filter ? .white : Color.goneTextSecondary)
+                        .padding(.horizontal, 13).frame(height: 34)
+                        .background(selection == filter ? Color.goneBrandPrimary : Color.goneSurfacePrimary, in: Capsule())
+                        .overlay(Capsule().stroke(selection == filter ? Color.clear : Color.goneBorderDefault))
+                }
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+        }
     }
 }
 
