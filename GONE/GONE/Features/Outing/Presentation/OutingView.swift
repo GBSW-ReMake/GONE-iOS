@@ -265,7 +265,7 @@ private struct TeacherOutingDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
                 statusBadge(outing.status)
-                    .padding(.bottom, 4)
+                    .padding(.bottom, 12)
                 HStack(spacing: 5) {
                     Text(outing.student.studentNumber).font(.title2.bold())
                     Text(outing.student.name).font(.title2.bold()).foregroundStyle(Color.goneBrandPrimary)
@@ -288,13 +288,13 @@ private struct TeacherOutingDetailView: View {
         HStack(spacing: GONESpacing.medium) {
             Button("거절") { isRejecting = true }
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .font(.headline.weight(.bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(Color.goneStatusError)
                 .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneStatusError))
             Button("수락") { Task { if await decide(outing, true, nil) { dismiss() } } }
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .font(.headline.weight(.bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(.white)
                 .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
         }
@@ -426,7 +426,7 @@ private struct RejectionReasonSheet: View {
                     .background(Color.goneSurfaceDisabled, in: RoundedRectangle(cornerRadius: 14))
                 Button("거절하기") { submit(reason); dismiss() }
                     .frame(maxWidth: .infinity, minHeight: 52)
-                    .font(.headline.weight(.bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
                     .background(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.goneBrandPrimary.opacity(0.45) : Color.goneStatusError, in: RoundedRectangle(cornerRadius: 14))
                     .disabled(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
