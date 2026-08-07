@@ -184,6 +184,7 @@ private struct TeacherOutingListView: View {
             List(filteredOutings) { outing in
                 NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
                     VStack(alignment: .leading, spacing: 5) {
+                        statusBadge(outing.status)
                         Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
                         HStack(spacing: 4) {
                             Text(outing.student.studentNumber).font(.subheadline.weight(.semibold))
@@ -193,13 +194,17 @@ private struct TeacherOutingListView: View {
                         Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                             .font(.footnote.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                     }
-                    .overlay(alignment: .topLeading) { statusBadge(outing.status).offset(y: -2) }
-                    .padding(.top, 34)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, GONESpacing.large)
+                    .padding(.vertical, GONESpacing.medium)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
                 }
-                .listRowBackground(Color.goneSurfacePrimary)
+                .listRowInsets(EdgeInsets(top: 6, leading: GONESpacing.screenHorizontal, bottom: 6, trailing: GONESpacing.screenHorizontal))
+                .listRowBackground(Color.clear)
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.goneScreenBackground)
             .overlay {
                 if filteredOutings.isEmpty {
                     ContentUnavailableView("해당 외출 신청이 없어요", systemImage: "line.3.horizontal.decrease.circle")
