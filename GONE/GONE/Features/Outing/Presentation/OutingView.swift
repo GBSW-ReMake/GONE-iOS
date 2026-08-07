@@ -183,24 +183,32 @@ private struct TeacherOutingListView: View {
             OutingFilterBar(selection: $filter)
             List(filteredOutings) { outing in
                 NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
-                    VStack(alignment: .leading, spacing: 5) {
-                        statusBadge(outing.status)
-                        Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
-                        HStack(spacing: 4) {
-                            Text(outing.student.studentNumber).font(.subheadline.weight(.semibold))
-                            Text(outing.student.name).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneBrandPrimary)
-                            Text("외출").font(.subheadline.weight(.semibold))
+                    HStack(spacing: GONESpacing.medium) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            statusBadge(outing.status)
+                            Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                            HStack(spacing: 4) {
+                                Text(outing.student.studentNumber).font(.subheadline.weight(.semibold))
+                                Text(outing.student.name).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneBrandPrimary)
+                                Text("외출").font(.subheadline.weight(.semibold))
+                            }
+                            Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
+                                .font(.footnote.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                         }
-                        Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
-                            .font(.footnote.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.goneTextTertiary)
                     }
                     .padding(.horizontal, GONESpacing.large)
                     .padding(.vertical, GONESpacing.medium)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
                 }
+                .buttonStyle(.plain)
                 .listRowInsets(EdgeInsets(top: 6, leading: GONESpacing.screenHorizontal, bottom: 6, trailing: GONESpacing.screenHorizontal))
                 .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -265,7 +273,7 @@ private struct TeacherOutingDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
                 statusBadge(outing.status)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 20)
                 HStack(spacing: 5) {
                     Text(outing.student.studentNumber).font(.title2.bold())
                     Text(outing.student.name).font(.title2.bold()).foregroundStyle(Color.goneBrandPrimary)
