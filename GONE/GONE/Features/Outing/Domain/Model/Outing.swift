@@ -49,10 +49,11 @@ struct OutingDraft: Equatable, Hashable {
     nonisolated var validationMessage: String? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
+        let selectedDay = calendar.startOfDay(for: date)
         let weekday = calendar.component(.weekday, from: today)
-        let daysUntilSunday = 7 - weekday
-        let endOfWeek = calendar.date(byAdding: .day, value: daysUntilSunday, to: today) ?? today
-        guard date >= today && date <= endOfWeek else { return "외출은 이번 주 안에서만 신청할 수 있어요." }
+        let daysUntilSaturday = 7 - weekday
+        let endOfWeek = calendar.date(byAdding: .day, value: daysUntilSaturday, to: today) ?? today
+        guard selectedDay >= today && selectedDay <= endOfWeek else { return "외출은 이번 주 안에서만 신청할 수 있어요." }
         guard minute(of: departureTime) >= Self.earliestMinute,
               minute(of: returnTime) <= Self.latestMinute else {
             return "외출 가능 시간은 오전 8:40부터 오후 8:30까지예요."
@@ -69,6 +70,7 @@ struct OutingDraft: Equatable, Hashable {
         let calendar = Calendar.current
         let day = calendar.startOfDay(for: date)
         var normalized = self
+        normalized.date = day
         let departure = calendar.dateComponents([.hour, .minute], from: departureTime)
         let returnTime = calendar.dateComponents([.hour, .minute], from: returnTime)
         normalized.departureTime = calendar.date(
