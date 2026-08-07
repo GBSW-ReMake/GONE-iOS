@@ -1,6 +1,6 @@
 import Foundation
 
-enum AccountRole: String, CaseIterable, Identifiable {
+enum AccountRole: String, CaseIterable, Identifiable, Hashable {
     case student
     case teacher
 
@@ -8,19 +8,19 @@ enum AccountRole: String, CaseIterable, Identifiable {
     var title: String { self == .student ? "학생" : "선생님" }
 }
 
-struct OutingTeacher: Identifiable, Equatable {
+struct OutingTeacher: Identifiable, Equatable, Hashable {
     let id: String
     let name: String
     let affiliation: String
 }
 
-struct OutingStudent: Equatable {
+struct OutingStudent: Equatable, Hashable {
     let name: String
     let studentNumber: String
 }
 
-struct OutingRequest: Identifiable, Equatable {
-    enum Status: Equatable {
+struct OutingRequest: Identifiable, Equatable, Hashable {
+    enum Status: Equatable, Hashable {
         case pendingApproval
         case approved
         case rejected(reason: String)
@@ -36,7 +36,7 @@ struct OutingRequest: Identifiable, Equatable {
     var status: Status
 }
 
-struct OutingDraft: Equatable {
+struct OutingDraft: Equatable, Hashable {
     static let earliestMinute = 8 * 60 + 40
     static let latestMinute = 20 * 60 + 30
 
@@ -46,7 +46,7 @@ struct OutingDraft: Equatable {
     var reason = ""
     var teacher: OutingTeacher?
 
-    var validationMessage: String? {
+    nonisolated var validationMessage: String? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let weekday = calendar.component(.weekday, from: today)
@@ -63,9 +63,9 @@ struct OutingDraft: Equatable {
         return nil
     }
 
-    var isValid: Bool { validationMessage == nil }
+    nonisolated var isValid: Bool { validationMessage == nil }
 
-    private func minute(of date: Date) -> Int {
+    nonisolated private func minute(of date: Date) -> Int {
         let components = Calendar.current.dateComponents([.hour, .minute], from: date)
         return (components.hour ?? 0) * 60 + (components.minute ?? 0)
     }
