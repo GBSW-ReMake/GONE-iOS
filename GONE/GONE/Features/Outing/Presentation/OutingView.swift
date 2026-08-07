@@ -104,7 +104,7 @@ private struct OutingRequestForm: View {
                 }
                 formField(title: "담당 선생님") {
                     Button { isShowingTeacherSearch = true } label: {
-                        fieldLabel(draft.teacher.map { "\($0.name) · \($0.affiliation)" } ?? "선생님 검색", icon: "magnifyingglass")
+                        fieldLabel(draft.teacher?.name ?? "선생님 검색", icon: "magnifyingglass")
                     }.buttonStyle(.plain)
                 }
                 formField(title: "외출 사유") {
@@ -176,12 +176,18 @@ private struct TeacherOutingListView: View {
     var body: some View {
         List(viewModel.outings) { outing in
             NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("\(outing.student.name) 학생 외출").font(.headline)
-                    Text("\(outing.student.studentNumber) · \(dateText(outing.date)) · \(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
-                        .font(.footnote).foregroundStyle(Color.goneTextSecondary)
-                    statusLabel(outing.status)
+                VStack(alignment: .leading, spacing: GONESpacing.small) {
+                    statusBadge(outing.status)
+                    HStack(spacing: 5) {
+                        Text(outing.student.studentNumber).font(.headline)
+                        Text(outing.student.name).font(.headline).foregroundStyle(Color.goneBrandPrimary)
+                        Text("외출").font(.headline)
+                    }
+                    Text(dateText(outing.date)).font(.subheadline).foregroundStyle(Color.goneTextSecondary)
+                    Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
                 }
+                .padding(.vertical, 6)
             }
         }
         .navigationTitle("외출 신청 목록")
@@ -193,18 +199,22 @@ private struct TeacherOutingDetailView: View {
     let outing: OutingRequest
     let decide: (OutingRequest, Bool, String?) async -> Bool
     @Environment(\.dismiss) private var dismiss
-    @State private var rejectionReason = ""
     @State private var isRejecting = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
-                Text("\(outing.student.name) 학생 외출").font(.title2.bold())
+                statusBadge(outing.status)
+                HStack(spacing: 5) {
+                    Text(outing.student.studentNumber).font(.title2.bold())
+                    Text(outing.student.name).font(.title2.bold()).foregroundStyle(Color.goneBrandPrimary)
+                    Text("외출").font(.title2.bold())
+                }
                 detailRow("학적 정보", outing.student.studentNumber)
                 detailRow("날짜", dateText(outing.date))
                 detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                 detailRow("사유", outing.reason)
-                detailRow("지정 선생님", "\(outing.teacher.name) · \(outing.teacher.affiliation)")
+                detailRow("지정 선생님", outing.teacher.name)
                 if case .pendingApproval = outing.status { actionButtons } else { statusLabel(outing.status) }
             }.padding(.horizontal, GONESpacing.screenHorizontal).padding(.vertical, GONESpacing.xLarge)
         }
@@ -213,22 +223,20 @@ private struct TeacherOutingDetailView: View {
     }
 
     private var actionButtons: some View {
-        VStack(spacing: GONESpacing.medium) {
-            if isRejecting {
-                TextField("거절 사유를 입력해 주세요", text: $rejectionReason, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-            }
-            HStack(spacing: GONESpacing.medium) {
-                Button(isRejecting ? "거절 확정" : "거절") {
-                    if isRejecting { Task { if await decide(outing, false, rejectionReason) { dismiss() } } }
-                    else { isRejecting = true }
-                }
-                .frame(maxWidth: .infinity, minHeight: 52).foregroundStyle(Color.goneStatusError)
+        HStack(spacing: GONESpacing.medium) {
+            Button("거절") { isRejecting = true }
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .foregroundStyle(Color.goneStatusError)
+                .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneStatusError))
-                .disabled(isRejecting && rejectionReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button("수락") { Task { if await decide(outing, true, nil) { dismiss() } } }
-                    .frame(maxWidth: .infinity, minHeight: 52).foregroundStyle(.white)
-                    .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
+            Button("수락") { Task { if await decide(outing, true, nil) { dismiss() } } }
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .foregroundStyle(.white)
+                .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
+        }
+        .sheet(isPresented: $isRejecting) {
+            RejectionReasonSheet { reason in
+                Task { if await decide(outing, false, reason) { dismiss() } }
             }
         }
     }
@@ -294,7 +302,8 @@ private struct StudentOutingCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
-            HStack { Text(dateText(outing.date)).font(.headline); Spacer(); statusLabel(outing.status) }
+            statusBadge(outing.status)
+            Text(dateText(outing.date)).font(.headline)
             Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))").font(.title3.bold())
             Text(outing.reason).foregroundStyle(Color.goneTextSecondary)
             Text("담당: \(outing.teacher.name)").font(.footnote).foregroundStyle(Color.goneTextSecondary)
@@ -310,6 +319,62 @@ private struct StudentOutingCard: View {
     case .pendingApproval: Text("승인 대기").foregroundStyle(Color.goneStatusOuting)
     case .approved: Text("승인됨").foregroundStyle(Color.goneBrandPrimary)
     case .rejected(let reason): Text("거절 · \(reason)").foregroundStyle(Color.goneStatusError)
+    }
+}
+
+@ViewBuilder private func statusBadge(_ status: OutingRequest.Status) -> some View {
+    switch status {
+    case .pendingApproval:
+        Text("승인 요청")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(Color.goneStatusOuting)
+            .padding(.horizontal, 15).padding(.vertical, 9)
+            .background(Color.goneStatusOuting.opacity(0.14), in: Capsule())
+    case .approved:
+        Text("승인 완료")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(Color.goneBrandPrimary)
+            .padding(.horizontal, 15).padding(.vertical, 9)
+            .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
+    case .rejected:
+        Text("거절됨")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(Color.goneStatusError)
+            .padding(.horizontal, 15).padding(.vertical, 9)
+            .background(Color.goneStatusError.opacity(0.12), in: Capsule())
+    }
+}
+
+private struct RejectionReasonSheet: View {
+    let submit: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var reason = ""
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: GONESpacing.large) {
+                Text("거절 사유를 입력해 주세요")
+                    .font(.title3.bold())
+                TextEditor(text: $reason)
+                    .frame(minHeight: 150)
+                    .padding(GONESpacing.small)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.goneSurfaceDisabled, in: RoundedRectangle(cornerRadius: 14))
+                Button("거절하기") { submit(reason); dismiss() }
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .foregroundStyle(.white)
+                    .background(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.goneBrandPrimary.opacity(0.45) : Color.goneStatusError, in: RoundedRectangle(cornerRadius: 14))
+                    .disabled(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Spacer()
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+            .padding(.top, GONESpacing.xLarge)
+            .navigationTitle("외출 거절")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 
