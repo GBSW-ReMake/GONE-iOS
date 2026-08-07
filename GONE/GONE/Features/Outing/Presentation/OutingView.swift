@@ -58,7 +58,7 @@ private struct StudentOutingListView: View {
                 }
             }
         }
-        .navigationTitle("외출")
+        .navigationTitle(viewModel.outings.isEmpty ? "" : "외출")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -68,10 +68,15 @@ private struct StudentOutingLandingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
+            Text("외출")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.goneTextSecondary)
             landingTitle
-            Text("외출이 필요한가요?").font(.headline.weight(.bold))
-            Text("외출 날짜와 시간을 입력해 담당 선생님께\n승인을 요청할 수 있습니다.")
-                .font(.subheadline).foregroundStyle(Color.goneTextSecondary).lineSpacing(3)
+            VStack(alignment: .leading, spacing: GONESpacing.small) {
+                Text("외출이 필요한가요?").font(.headline.weight(.bold))
+                Text("외출 날짜와 시간을 입력해 담당 선생님께\n승인을 요청할 수 있습니다.")
+                    .font(.subheadline).foregroundStyle(Color.goneTextSecondary).lineSpacing(3)
+            }
             Image("OutingHero")
                 .resizable().scaledToFit().frame(maxWidth: .infinity).frame(height: 230)
                 .padding(.vertical, GONESpacing.large)
@@ -111,7 +116,6 @@ private struct OutingRequestForm: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
-                Text("외출 신청").font(.title2.bold())
                 Text("신청 가능 기간: 이번 주 · 가능 시간: 오전 8:40 ~ 오후 8:30")
                     .font(.footnote).foregroundStyle(Color.goneTextSecondary)
                     .padding(GONESpacing.medium).frame(maxWidth: .infinity, alignment: .leading)
@@ -193,7 +197,7 @@ private struct OutingRequestForm: View {
             selectedTimeMode = mode
             if let minutes { setTime(start: minutes.0, end: minutes.1) }
         } label: {
-            Text(title).font(.caption.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 46)
+            Text(title).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 46)
         }
         .foregroundStyle(selectedTimeMode == mode ? .white : Color.goneBrandPrimary)
         .background(selectedTimeMode == mode ? Color.goneBrandPrimary : Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 12))
@@ -461,12 +465,8 @@ private struct StudentOutingCard: View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             statusBadge(outing.status)
             Text(dateText(outing.date)).font(.subheadline).foregroundStyle(Color.goneTextSecondary)
-            HStack(spacing: 4) {
-                Text(outing.student.studentNumber).font(.headline.weight(.semibold))
-                Text(outing.student.name).font(.headline.weight(.semibold)).foregroundStyle(Color.goneBrandPrimary)
-                Text("외출").font(.headline.weight(.semibold))
-            }
-            Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))").font(.title3.bold())
+            Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
+                .font(.headline.weight(.semibold))
             Text(outing.reason).font(.subheadline).foregroundStyle(Color.goneTextSecondary)
             Text("담당: \(outing.teacher.name)").font(.footnote).foregroundStyle(Color.goneTextSecondary)
             if case .pendingApproval = outing.status { Button("신청 취소", role: .destructive, action: cancel).font(.footnote.weight(.semibold)) }
