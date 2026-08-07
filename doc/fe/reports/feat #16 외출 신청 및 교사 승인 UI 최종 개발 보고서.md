@@ -3,7 +3,7 @@
 > **완료일**: 2026-08-07  
 > **작업 번호**: #16  
 > **관련 이슈**: [#16](https://github.com/GBSW-ReMake/GONE-iOS/issues/16)  
-> **PR**: 생성 후 기입  
+> **PR**: [#17](https://github.com/GBSW-ReMake/GONE-iOS/pull/17)  
 > **브랜치**: `feat/16-outing-application`
 
 ---
