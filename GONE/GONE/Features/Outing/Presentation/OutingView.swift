@@ -131,6 +131,7 @@ private struct OutingRequestForm: View {
     @State private var isShowingDatePicker = false
     @State private var isShowingTeacherSearch = false
     @State private var selectedTimeMode: TimeSelectionMode?
+    @State private var submissionMessage: String?
     @FocusState private var isReasonFocused: Bool
 
     private let lunch = (11 * 60 + 50, 13 * 60 + 10)
@@ -187,19 +188,28 @@ private struct OutingRequestForm: View {
                         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault))
                 }
-                if let message = normalizedDraft.validationMessage {
+                if let message = submissionMessage ?? normalizedDraft.validationMessage {
                     Text(message).font(.footnote).foregroundStyle(Color.goneStatusError)
                 }
                 GONEPrimaryButton(
                     title: "외출 신청하기",
-                    isEnabled: selectedTimeMode != nil && normalizedDraft.isValid,
+                    isEnabled: true,
                     isLoading: isSubmitting,
                     disabledBackground: Color.goneBrandPrimary.opacity(0.35),
                     disabledForeground: .white
                 ) {
-                    isSubmitting = true
                     let submissionDraft = normalizedDraft
-                    Task { _ = await submit(submissionDraft); isSubmitting = false }
+                    guard selectedTimeMode != nil else {
+                        submissionMessage = "시간을 선택해 주세요."
+                        return
+                    }
+                    guard let message = submissionDraft.validationMessage else {
+                        isSubmitting = true
+                        submissionMessage = nil
+                        Task { _ = await submit(submissionDraft); isSubmitting = false }
+                        return
+                    }
+                    submissionMessage = message
                 }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -212,6 +222,7 @@ private struct OutingRequestForm: View {
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(TapGesture().onEnded { isReasonFocused = false })
         .onChange(of: draft.date) { _, newDate in alignTimes(to: newDate) }
+        .onChange(of: draft) { _, _ in submissionMessage = nil }
         .sheet(isPresented: $isShowingDatePicker) { DatePickerSheet(date: $draft.date) }
         .sheet(isPresented: $isShowingTeacherSearch) {
             OutingTeacherSearchSheet(search: searchTeachers) { draft.teacher = $0 }

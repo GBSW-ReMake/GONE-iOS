@@ -27,8 +27,13 @@ final class OutingViewModel: ObservableObject {
     }
 
     func submit(_ draft: OutingDraft) async -> Bool {
+        let normalizedDraft = draft.normalizedToSelectedDate()
+        if let message = normalizedDraft.validationMessage {
+            errorMessage = message
+            return false
+        }
         do {
-            _ = try await repository.submit(draft)
+            _ = try await repository.submit(normalizedDraft)
             await load()
             return true
         } catch {
