@@ -173,6 +173,7 @@ private struct OutingRequestForm: View {
 private struct TeacherOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
     @State private var filter: OutingFilter = .all
+    @State private var selectedOuting: OutingRequest?
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
@@ -182,7 +183,7 @@ private struct TeacherOutingListView: View {
                 .padding(.top, GONESpacing.medium)
             OutingFilterBar(selection: $filter)
             List(filteredOutings) { outing in
-                NavigationLink { TeacherOutingDetailView(outing: outing, decide: viewModel.decide) } label: {
+                Button { selectedOuting = outing } label: {
                     HStack(spacing: GONESpacing.medium) {
                         VStack(alignment: .leading, spacing: 5) {
                             statusBadge(outing.status)
@@ -220,6 +221,9 @@ private struct TeacherOutingListView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $selectedOuting) { outing in
+            TeacherOutingDetailView(outing: outing, decide: viewModel.decide)
+        }
     }
 
     private var filteredOutings: [OutingRequest] { viewModel.outings.filter { filter.includes($0.status) } }
