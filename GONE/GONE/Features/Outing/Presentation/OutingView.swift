@@ -189,9 +189,9 @@ private struct TeacherOutingListView: View {
                             statusBadge(outing.status).padding(.bottom, 4)
                             Text(dateText(outing.date)).font(.caption).foregroundStyle(Color.goneTextSecondary)
                             HStack(spacing: 4) {
-                                Text(outing.student.studentNumber).font(.subheadline.weight(.semibold))
-                                Text(outing.student.name).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneBrandPrimary)
-                                Text("외출").font(.subheadline.weight(.semibold))
+                                Text(outing.student.studentNumber).font(.headline.weight(.semibold))
+                                Text(outing.student.name).font(.headline.weight(.semibold)).foregroundStyle(Color.goneBrandPrimary)
+                                Text("외출").font(.headline.weight(.semibold))
                             }
                             Text("\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                                 .font(.footnote.weight(.semibold)).foregroundStyle(Color.goneTextPrimary)
