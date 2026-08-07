@@ -47,10 +47,6 @@ struct OutingDraft: Equatable, Hashable {
     var teacher: OutingTeacher?
 
     nonisolated var validationMessage: String? {
-        let calendar = Calendar.current
-        guard OutingApplicationPeriod.contains(date, calendar: calendar) else {
-            return "외출은 이번 주 안에서만 신청할 수 있어요."
-        }
         guard minute(of: departureTime) >= Self.earliestMinute,
               minute(of: returnTime) <= Self.latestMinute else {
             return "외출 가능 시간은 오전 8:40부터 오후 8:30까지예요."
