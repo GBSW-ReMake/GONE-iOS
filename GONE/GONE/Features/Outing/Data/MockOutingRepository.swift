@@ -37,10 +37,12 @@ actor MockOutingRepository: OutingRepository {
     func submit(_ draft: OutingDraft) async throws -> OutingRequest {
         let normalizedDraft = draft.normalizedToSelectedDate()
         guard normalizedDraft.isValid, let teacher = normalizedDraft.teacher else { throw OutingRepositoryError.invalidDraft }
+        let student = OutingStudent(name: "김은찬", studentNumber: "3206")
         let overlaps = outings.contains { request in
             let isRejected: Bool
             if case .rejected = request.status { isRejected = true } else { isRejected = false }
-            return !isRejected
+            return request.student.studentNumber == student.studentNumber
+                && !isRejected
                 && Calendar.current.isDate(request.date, inSameDayAs: normalizedDraft.date)
                 && normalizedDraft.departureTime < request.returnTime
                 && normalizedDraft.returnTime > request.departureTime
@@ -48,7 +50,7 @@ actor MockOutingRepository: OutingRepository {
         guard !overlaps else { throw OutingRepositoryError.timeOverlap }
         let request = OutingRequest(
             id: "O-\(String(format: "%03d", outings.count + 1))",
-            student: OutingStudent(name: "김은찬", studentNumber: "3206"),
+            student: student,
             date: normalizedDraft.date,
             departureTime: normalizedDraft.departureTime,
             returnTime: normalizedDraft.returnTime,
@@ -67,7 +69,8 @@ actor MockOutingRepository: OutingRepository {
         let overlaps = outings.contains { request in
             guard request.id != outing.id else { return false }
             if case .rejected = request.status { return false }
-            return Calendar.current.isDate(request.date, inSameDayAs: normalizedDraft.date)
+            return request.student.studentNumber == outing.student.studentNumber
+                && Calendar.current.isDate(request.date, inSameDayAs: normalizedDraft.date)
                 && normalizedDraft.departureTime < request.returnTime
                 && normalizedDraft.returnTime > request.departureTime
         }
