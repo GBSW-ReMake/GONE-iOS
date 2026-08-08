@@ -135,10 +135,10 @@ struct SettingsView: View {
 
     private var settingsMenu: some View {
         VStack(spacing: GONESpacing.medium) {
-            SettingsCard(verticalPadding: GONESpacing.medium) {
+            SettingsCard(verticalPadding: GONESpacing.small) {
                 settingsMenuRow(title: "알림 설정", systemImage: "bell")
             }
-            SettingsCard(verticalPadding: GONESpacing.medium) {
+            SettingsCard(verticalPadding: GONESpacing.small) {
                 settingsMenuRow(title: "문의하기", systemImage: "questionmark.bubble")
             }
         }
@@ -161,7 +161,7 @@ struct SettingsView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.goneTextSecondary)
             }
-            .frame(minHeight: 48)
+            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -179,7 +179,7 @@ struct SettingsView: View {
             activityFilters
 
             if filteredActivities.isEmpty {
-                SettingsCard {
+                SettingsCard(verticalPadding: GONESpacing.small) {
                     HStack(spacing: GONESpacing.small) {
                         Image(systemName: "clock")
                             .font(.footnote)
@@ -191,9 +191,9 @@ struct SettingsView: View {
                     .frame(minHeight: 44)
                 }
             } else {
-                VStack(spacing: GONESpacing.medium) {
+                VStack(spacing: GONESpacing.small) {
                     ForEach(filteredActivities) { activity in
-                        SettingsCard {
+                        SettingsCard(verticalPadding: GONESpacing.small) {
                             activityRow(activity)
                         }
                     }
@@ -218,10 +218,11 @@ struct SettingsView: View {
                             .frame(minHeight: 44)
                             .background(
                                 activityFilter == filter ? Color.goneBrandPrimary : Color.goneSurfacePrimary,
-                                in: Capsule()
+                                in: RoundedRectangle(cornerRadius: 12)
                             )
                             .overlay(
-                                Capsule().stroke(activityFilter == filter ? .clear : Color.goneBorderDefault)
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(activityFilter == filter ? .clear : Color.goneBorderDefault)
                             )
                     }
                     .buttonStyle(.plain)
@@ -258,7 +259,7 @@ struct SettingsView: View {
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(Color.goneTextTertiary)
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, GONESpacing.small)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
