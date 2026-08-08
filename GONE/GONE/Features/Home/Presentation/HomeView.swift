@@ -442,6 +442,7 @@ private struct RequestStatusSection: View {
     let onLabRequestTap: () -> Void
     let onOutingRequestTap: () -> Void
     let onSchoolCampingRequestTap: () -> Void
+    @State private var transitioningRequestID: UUID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
@@ -449,7 +450,7 @@ private struct RequestStatusSection: View {
             ForEach(requests) { request in
                 let displayRequest = requestForDisplay(request)
                 Button {
-                    requestTapAction(for: request.kind)
+                    transitionToRequest(for: request)
                 } label: {
                     HomeCard {
                         HStack(spacing: GONESpacing.medium) {
@@ -476,8 +477,13 @@ private struct RequestStatusSection: View {
                         .padding(.vertical, 4)
                         .accessibilityElement(children: .combine)
                     }
+                    .scaleEffect(transitioningRequestID == request.id ? 0.97 : 1)
+                    .opacity(transitioningRequestID == request.id ? 0.72 : 1)
+                    .offset(x: transitioningRequestID == request.id ? -8 : 0)
                 }
                 .buttonStyle(.plain)
+                .disabled(transitioningRequestID != nil)
+                .animation(.easeOut(duration: 0.14), value: transitioningRequestID)
             }
         }
     }
@@ -511,6 +517,16 @@ private struct RequestStatusSection: View {
         case .lab: onLabRequestTap()
         case .outing: onOutingRequestTap()
         case .schoolCamping: onSchoolCampingRequestTap()
+        }
+    }
+
+    private func transitionToRequest(for request: DashboardRequest) {
+        withAnimation(.easeOut(duration: 0.14)) {
+            transitioningRequestID = request.id
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+            requestTapAction(for: request.kind)
+            transitioningRequestID = nil
         }
     }
 
