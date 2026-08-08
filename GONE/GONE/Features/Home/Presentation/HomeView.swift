@@ -175,6 +175,7 @@ private struct AcademicScheduleSection: View {
     let onMoveMonth: (Int) -> Void
 
     private let calendar = Calendar.current
+    @State private var movesForward = true
 
     private var monthlySchedules: [AcademicSchedule] {
         schedules
@@ -193,50 +194,75 @@ private struct AcademicScheduleSection: View {
                     .foregroundStyle(Color.goneTextSecondary)
                 Spacer()
                 monthButton(systemImage: "chevron.left", accessibilityLabel: "이전 달 학사일정") {
-                    onMoveMonth(-1)
+                    moveMonth(by: -1)
                 }
                 monthButton(systemImage: "chevron.right", accessibilityLabel: "다음 달 학사일정") {
-                    onMoveMonth(1)
+                    moveMonth(by: 1)
                 }
             }
 
-            if monthlySchedules.isEmpty {
-                HomeCard {
-                    ContentUnavailableView(
-                        "등록된 학사일정이 없어요",
-                        systemImage: "calendar",
-                        description: Text("다른 달의 일정을 확인해 보세요.")
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, GONESpacing.small)
-                }
-            } else {
-                VStack(spacing: GONESpacing.small) {
-                    ForEach(monthlySchedules) { schedule in
-                        HStack(spacing: GONESpacing.medium) {
-                            Text(dateFormatter.string(from: schedule.date))
-                                .font(.footnote.weight(.bold))
-                                .monospacedDigit()
-                                .foregroundStyle(Color.goneBrandPrimary)
-                                .lineLimit(1)
-                                .frame(width: 58, alignment: .leading)
-                            Text(schedule.title)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.goneTextPrimary)
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, GONESpacing.large)
-                        .padding(.vertical, 13)
-                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
-                        .accessibilityElement(children: .combine)
+            scheduleContent
+                .id(displayedMonth)
+                .transition(monthTransition)
+        }
+        .animation(.easeInOut(duration: 0.28), value: displayedMonth)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(monthTitle) 학사일정")
+    }
+
+    @ViewBuilder
+    private var scheduleContent: some View {
+        if monthlySchedules.isEmpty {
+            HStack(spacing: GONESpacing.small) {
+                Image(systemName: "calendar")
+                    .font(.footnote)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Text("등록된 학사일정이 없어요")
+                    .font(.footnote)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, GONESpacing.large)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
+        } else {
+            VStack(spacing: GONESpacing.small) {
+                ForEach(monthlySchedules) { schedule in
+                    HStack(spacing: GONESpacing.medium) {
+                        Text(dateFormatter.string(from: schedule.date))
+                            .font(.footnote.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Color.goneBrandPrimary)
+                            .lineLimit(1)
+                            .frame(width: 58, alignment: .leading)
+                        Text(schedule.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.goneTextPrimary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
                     }
+                    .padding(.horizontal, GONESpacing.large)
+                    .padding(.vertical, 13)
+                    .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
+                    .accessibilityElement(children: .combine)
                 }
             }
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(monthTitle) 학사일정")
+    }
+
+    private var monthTransition: AnyTransition {
+        movesForward
+            ? .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity))
+            : .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity))
+    }
+
+    private func moveMonth(by value: Int) {
+        movesForward = value > 0
+        withAnimation(.easeInOut(duration: 0.28)) {
+            onMoveMonth(value)
+        }
     }
 
     private var monthTitle: String {
