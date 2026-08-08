@@ -3,7 +3,7 @@
 > **완료일**: 2026-08-08<br>
 > **작업 번호**: #20<br>
 > **관련 이슈**: [#20](https://github.com/GBSW-ReMake/GONE-iOS/issues/20)<br>
-> **PR**: 생성 후 기입<br>
+> **PR**: [#21](https://github.com/GBSW-ReMake/GONE-iOS/pull/21)<br>
 > **브랜치**: `feat/20-home-dashboard-improvement`
 
 ---
