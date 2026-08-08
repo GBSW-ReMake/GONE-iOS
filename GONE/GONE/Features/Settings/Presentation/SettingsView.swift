@@ -135,10 +135,10 @@ struct SettingsView: View {
 
     private var settingsMenu: some View {
         VStack(spacing: GONESpacing.medium) {
-            SettingsCard {
+            SettingsCard(verticalPadding: GONESpacing.medium) {
                 settingsMenuRow(title: "알림 설정", systemImage: "bell")
             }
-            SettingsCard {
+            SettingsCard(verticalPadding: GONESpacing.medium) {
                 settingsMenuRow(title: "문의하기", systemImage: "questionmark.bubble")
             }
         }
@@ -161,7 +161,7 @@ struct SettingsView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.goneTextSecondary)
             }
-            .frame(minHeight: 54)
+            .frame(minHeight: 48)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -269,11 +269,21 @@ struct SettingsView: View {
 }
 
 private struct SettingsCard<Content: View>: View {
-    @ViewBuilder let content: Content
+    private let verticalPadding: CGFloat
+    private let content: Content
+
+    init(
+        verticalPadding: CGFloat = GONESpacing.large,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.verticalPadding = verticalPadding
+        self.content = content()
+    }
 
     var body: some View {
         content
-            .padding(GONESpacing.large)
+            .padding(.horizontal, GONESpacing.large)
+            .padding(.vertical, verticalPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
     }
