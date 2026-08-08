@@ -213,29 +213,24 @@ private struct AcademicScheduleSection: View {
             } else {
                 VStack(spacing: GONESpacing.small) {
                     ForEach(monthlySchedules) { schedule in
-                        HomeCard {
-                            HStack(spacing: GONESpacing.medium) {
-                                VStack(spacing: 2) {
-                                    Text(dayFormatter.string(from: schedule.date))
-                                        .font(.title3.weight(.bold))
-                                        .foregroundStyle(Color.goneBrandPrimary)
-                                    Text(weekdayFormatter.string(from: schedule.date))
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(Color.goneTextSecondary)
-                                }
-                                .frame(width: 42)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(schedule.title)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(Color.goneTextPrimary)
-                                    Text("학사일정")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.goneTextSecondary)
-                                }
-                                Spacer()
-                            }
-                            .accessibilityElement(children: .combine)
+                        HStack(spacing: GONESpacing.medium) {
+                            Text(dateFormatter.string(from: schedule.date))
+                                .font(.footnote.weight(.bold))
+                                .monospacedDigit()
+                                .foregroundStyle(Color.goneBrandPrimary)
+                                .lineLimit(1)
+                                .frame(width: 58, alignment: .leading)
+                            Text(schedule.title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.goneTextPrimary)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
                         }
+                        .padding(.horizontal, GONESpacing.large)
+                        .padding(.vertical, 13)
+                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
+                        .accessibilityElement(children: .combine)
                     }
                 }
             }
@@ -251,17 +246,10 @@ private struct AcademicScheduleSection: View {
         return formatter.string(from: displayedMonth)
     }
 
-    private var dayFormatter: DateFormatter {
+    private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "MM.dd"
-        return formatter
-    }
-
-    private var weekdayFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "EEE"
+        formatter.dateFormat = "MM.dd EEE"
         return formatter
     }
 
