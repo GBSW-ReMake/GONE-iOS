@@ -28,10 +28,25 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.state, .failed)
     }
 
+    func testMoveAcademicMonthChangesSelectedMonth() {
+        let calendar = Calendar(identifier: .gregorian)
+        let initialMonth = calendar.date(from: DateComponents(year: 2026, month: 8, day: 1))!
+        let viewModel = HomeViewModel(
+            fetchDashboard: FetchHomeDashboardUseCase(repository: StubHomeDashboardRepository(result: .success(makeDashboard()))),
+            displayedAcademicMonth: initialMonth,
+            calendar: calendar
+        )
+
+        viewModel.moveAcademicMonth(by: 1)
+
+        XCTAssertEqual(viewModel.displayedAcademicMonth, calendar.date(from: DateComponents(year: 2026, month: 9, day: 1)))
+    }
+
     private func makeDashboard() -> HomeDashboard {
         HomeDashboard(
             profile: StudentProfile(name: "김은찬", department: "소프트웨어개발과", studentInfo: "2학년 2반 · 6번", rewardPoints: 15, penaltyPoints: 3, roles: []),
             schedule: [ClassSchedule(period: 1, subject: "자료구조", location: "소프트웨어 1실", time: "08:40–09:30")],
+            academicSchedules: [],
             meals: [Meal(mealName: "점심", calories: "785 kcal", title: "오늘의 급식", servingTime: "12:20–13:20", leftMenu: [], rightMenu: [])],
             requests: []
         )

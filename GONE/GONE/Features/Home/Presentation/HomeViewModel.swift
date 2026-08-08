@@ -10,11 +10,21 @@ final class HomeViewModel: ObservableObject {
     }
 
     @Published private(set) var state: State = .loading
+    @Published private(set) var displayedAcademicMonth: Date
 
     private let fetchDashboard: FetchHomeDashboardUseCase
+    private let calendar: Calendar
 
-    init(fetchDashboard: FetchHomeDashboardUseCase) {
+    init(
+        fetchDashboard: FetchHomeDashboardUseCase,
+        displayedAcademicMonth: Date = Date(),
+        calendar: Calendar = .current
+    ) {
         self.fetchDashboard = fetchDashboard
+        self.calendar = calendar
+        self.displayedAcademicMonth = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: displayedAcademicMonth)
+        ) ?? displayedAcademicMonth
     }
 
     func load() async {
@@ -24,5 +34,12 @@ final class HomeViewModel: ObservableObject {
         } catch {
             state = .failed
         }
+    }
+
+    func moveAcademicMonth(by value: Int) {
+        guard let month = calendar.date(byAdding: .month, value: value, to: displayedAcademicMonth) else { return }
+        displayedAcademicMonth = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: month)
+        ) ?? month
     }
 }

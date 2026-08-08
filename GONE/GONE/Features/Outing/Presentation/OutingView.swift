@@ -28,7 +28,10 @@ struct OutingView: View {
                 }
             }
         }
-        .task { await viewModel.load() }
+        .task {
+            guard viewModel.isLoading else { return }
+            await viewModel.load()
+        }
     }
 }
 

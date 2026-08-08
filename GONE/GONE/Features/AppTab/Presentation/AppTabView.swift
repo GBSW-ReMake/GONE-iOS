@@ -25,11 +25,15 @@ struct AppTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $selection) {
+        TabView(selection: animatedSelection) {
             HomeView(
                 viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
                 labReservation: labReservationViewModel.reservation,
-                onLabRequestTap: { selection = .lab }
+                outings: outingViewModel.outings,
+                schoolCampingReservation: schoolCampingViewModel.reservation,
+                onLabRequestTap: { select(.lab) },
+                onOutingRequestTap: { select(.outing) },
+                onSchoolCampingRequestTap: { select(.schoolCamping) }
             )
                 .tabItem { Label("홈", image: "HomeTabIcon") }
                 .tag(AppTab.home)
@@ -51,6 +55,25 @@ struct AppTabView: View {
                 .tag(AppTab.settings)
         }
         .tint(.goneBrandPrimary)
+        .task {
+            async let labLoad: Void = labReservationViewModel.load()
+            async let outingLoad: Void = outingViewModel.load()
+            async let schoolCampingLoad: Void = schoolCampingViewModel.load()
+            _ = await (labLoad, outingLoad, schoolCampingLoad)
+        }
+    }
+
+    private var animatedSelection: Binding<AppTab> {
+        Binding(
+            get: { selection },
+            set: { newSelection in select(newSelection) }
+        )
+    }
+
+    private func select(_ tab: AppTab) {
+        withAnimation(.easeInOut(duration: 0.28)) {
+            selection = tab
+        }
     }
 }
 
