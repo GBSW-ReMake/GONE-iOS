@@ -29,7 +29,11 @@ struct AppTabView: View {
             HomeView(
                 viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
                 labReservation: labReservationViewModel.reservation,
-                onLabRequestTap: { selection = .lab }
+                outings: outingViewModel.outings,
+                schoolCampingReservation: schoolCampingViewModel.reservation,
+                onLabRequestTap: { selection = .lab },
+                onOutingRequestTap: { selection = .outing },
+                onSchoolCampingRequestTap: { selection = .schoolCamping }
             )
                 .tabItem { Label("홈", image: "HomeTabIcon") }
                 .tag(AppTab.home)
@@ -51,6 +55,12 @@ struct AppTabView: View {
                 .tag(AppTab.settings)
         }
         .tint(.goneBrandPrimary)
+        .task {
+            async let labLoad: Void = labReservationViewModel.load()
+            async let outingLoad: Void = outingViewModel.load()
+            async let schoolCampingLoad: Void = schoolCampingViewModel.load()
+            _ = await (labLoad, outingLoad, schoolCampingLoad)
+        }
     }
 }
 

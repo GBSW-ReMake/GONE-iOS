@@ -3,16 +3,28 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
     private let labReservation: LabReservation?
+    private let outings: [OutingRequest]
+    private let schoolCampingReservation: SchoolCampingReservation?
     private let onLabRequestTap: () -> Void
+    private let onOutingRequestTap: () -> Void
+    private let onSchoolCampingRequestTap: () -> Void
 
     init(
         viewModel: HomeViewModel,
         labReservation: LabReservation? = nil,
-        onLabRequestTap: @escaping () -> Void = {}
+        outings: [OutingRequest] = [],
+        schoolCampingReservation: SchoolCampingReservation? = nil,
+        onLabRequestTap: @escaping () -> Void = {},
+        onOutingRequestTap: @escaping () -> Void = {},
+        onSchoolCampingRequestTap: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.labReservation = labReservation
+        self.outings = outings
+        self.schoolCampingReservation = schoolCampingReservation
         self.onLabRequestTap = onLabRequestTap
+        self.onOutingRequestTap = onOutingRequestTap
+        self.onSchoolCampingRequestTap = onSchoolCampingRequestTap
     }
 
     var body: some View {
@@ -42,10 +54,19 @@ struct HomeView: View {
                 header(for: dashboard.profile)
                 ProfileSummaryCard(profile: dashboard.profile)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
+                AcademicScheduleSection(
+                    schedules: dashboard.academicSchedules,
+                    displayedMonth: viewModel.displayedAcademicMonth,
+                    onMoveMonth: viewModel.moveAcademicMonth
+                )
                 RequestStatusSection(
                     requests: dashboard.requests,
                     labReservation: labReservation,
-                    onLabRequestTap: onLabRequestTap
+                    outings: outings,
+                    schoolCampingReservation: schoolCampingReservation,
+                    onLabRequestTap: onLabRequestTap,
+                    onOutingRequestTap: onOutingRequestTap,
+                    onSchoolCampingRequestTap: onSchoolCampingRequestTap
                 )
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -83,7 +104,6 @@ private struct ProfileSummaryCard: View {
                         .foregroundStyle(Color.goneTextSecondary)
                 }
                 HStack(spacing: 0) {
-                    ScoreView(title: "상점", value: "+\(profile.rewardPoints)", color: .goneBrandPrimary)
                     ScoreView(title: "벌점", value: "-\(profile.penaltyPoints)", color: .gonePenalty)
                     ScoreView(title: "현재 점수", value: "+\(profile.totalPoints)점", color: .goneTextPrimary)
                 }
@@ -146,6 +166,119 @@ private struct TodayScheduleCard: View {
             SchedulePager(schedule: schedule)
             MealPager(meals: meals)
         }
+    }
+}
+
+private struct AcademicScheduleSection: View {
+    let schedules: [AcademicSchedule]
+    let displayedMonth: Date
+    let onMoveMonth: (Int) -> Void
+
+    private let calendar = Calendar.current
+
+    private var monthlySchedules: [AcademicSchedule] {
+        schedules
+            .filter { calendar.isDate($0.date, equalTo: displayedMonth, toGranularity: .month) }
+            .sorted { $0.date < $1.date }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: GONESpacing.medium) {
+            HStack(spacing: GONESpacing.small) {
+                Text("학사일정")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.goneTextPrimary)
+                Text(monthTitle)
+                    .font(.caption)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Spacer()
+                monthButton(systemImage: "chevron.left", accessibilityLabel: "이전 달 학사일정") {
+                    onMoveMonth(-1)
+                }
+                monthButton(systemImage: "chevron.right", accessibilityLabel: "다음 달 학사일정") {
+                    onMoveMonth(1)
+                }
+            }
+
+            if monthlySchedules.isEmpty {
+                HomeCard {
+                    ContentUnavailableView(
+                        "등록된 학사일정이 없어요",
+                        systemImage: "calendar",
+                        description: Text("다른 달의 일정을 확인해 보세요.")
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, GONESpacing.small)
+                }
+            } else {
+                VStack(spacing: GONESpacing.small) {
+                    ForEach(monthlySchedules) { schedule in
+                        HomeCard {
+                            HStack(spacing: GONESpacing.medium) {
+                                VStack(spacing: 2) {
+                                    Text(dayFormatter.string(from: schedule.date))
+                                        .font(.title3.weight(.bold))
+                                        .foregroundStyle(Color.goneBrandPrimary)
+                                    Text(weekdayFormatter.string(from: schedule.date))
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.goneTextSecondary)
+                                }
+                                .frame(width: 42)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(schedule.title)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(Color.goneTextPrimary)
+                                    Text("학사일정")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.goneTextSecondary)
+                                }
+                                Spacer()
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(monthTitle) 학사일정")
+    }
+
+    private var monthTitle: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy년 M월"
+        return formatter.string(from: displayedMonth)
+    }
+
+    private var dayFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "MM.dd"
+        return formatter
+    }
+
+    private var weekdayFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "EEE"
+        return formatter
+    }
+
+    private func monthButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.goneTextPrimary)
+                .frame(width: 44, height: 44)
+                .background(Color(.systemBackground), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
     }
 }
 
@@ -290,7 +423,11 @@ private struct MealMenuColumn: View {
 private struct RequestStatusSection: View {
     let requests: [DashboardRequest]
     let labReservation: LabReservation?
+    let outings: [OutingRequest]
+    let schoolCampingReservation: SchoolCampingReservation?
     let onLabRequestTap: () -> Void
+    let onOutingRequestTap: () -> Void
+    let onSchoolCampingRequestTap: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
@@ -298,7 +435,7 @@ private struct RequestStatusSection: View {
             ForEach(requests) { request in
                 let displayRequest = requestForDisplay(request)
                 Button {
-                    if request.kind == .lab { onLabRequestTap() }
+                    requestTapAction(for: request.kind)
                 } label: {
                     HomeCard {
                         HStack(spacing: GONESpacing.medium) {
@@ -332,20 +469,41 @@ private struct RequestStatusSection: View {
     }
 
     private func requestForDisplay(_ request: DashboardRequest) -> (detail: String, status: DashboardRequest.Status) {
-        guard request.kind == .lab, let labReservation else {
-            return (request.detail, request.status)
+        switch request.kind {
+        case .lab:
+            guard let labReservation else { return (request.detail, request.status) }
+            let status: DashboardRequest.Status = switch labReservation.status {
+            case .submitted: .completed
+            case .pending: .pending
+            case .approved: .reserved
+            }
+            return ("\(labReservation.date) · \(labReservation.usageTime)", status)
+        case .outing:
+            guard let outing = outings.first else { return (request.detail, request.status) }
+            let status: DashboardRequest.Status = switch outing.status {
+            case .pendingApproval: .pending
+            case .approved: .completed
+            case .rejected: .rejected
+            }
+            return ("\(outingDateFormatter.string(from: outing.date)) · \(outing.reason)", status)
+        case .schoolCamping:
+            guard let schoolCampingReservation else { return (request.detail, request.status) }
+            return ("\(campingDateFormatter.string(from: schoolCampingReservation.date)) · \(schoolCampingReservation.participants.count)명", .reserved)
         }
+    }
 
-        let status: DashboardRequest.Status = switch labReservation.status {
-        case .submitted: .completed
-        case .pending: .pending
-        case .approved: .reserved
+    private func requestTapAction(for kind: DashboardRequest.Kind) {
+        switch kind {
+        case .lab: onLabRequestTap()
+        case .outing: onOutingRequestTap()
+        case .schoolCamping: onSchoolCampingRequestTap()
         }
-        return ("\(labReservation.date) · \(labReservation.usageTime)", status)
     }
 
     private func statusColor(for status: DashboardRequest.Status) -> Color {
         switch status {
+        case .notApplied: .goneTextSecondary
+        case .rejected: .gonePenalty
         case .completed, .reserved: .goneBrandPrimary
         case .pending: .orange
         }
@@ -353,9 +511,25 @@ private struct RequestStatusSection: View {
 
     private func statusBackgroundColor(for status: DashboardRequest.Status) -> Color {
         switch status {
+        case .notApplied: Color.goneSurfaceDisabled
+        case .rejected: Color.gonePenalty.opacity(0.12)
         case .completed, .reserved: Color.goneBrandPrimary.opacity(0.12)
         case .pending: Color.orange.opacity(0.14)
         }
+    }
+
+    private var outingDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일"
+        return formatter
+    }
+
+    private var campingDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일 EEE"
+        return formatter
     }
 }
 

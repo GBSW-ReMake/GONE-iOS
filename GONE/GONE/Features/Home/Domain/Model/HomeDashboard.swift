@@ -3,6 +3,7 @@ import Foundation
 struct HomeDashboard: Equatable {
     let profile: StudentProfile
     let schedule: [ClassSchedule]
+    let academicSchedules: [AcademicSchedule]
     let meals: [Meal]
     let requests: [DashboardRequest]
 }
@@ -35,6 +36,12 @@ struct Meal: Equatable {
     let rightMenu: [String]
 }
 
+struct AcademicSchedule: Identifiable, Equatable {
+    let id: String
+    let date: Date
+    let title: String
+}
+
 struct DashboardRequest: Identifiable, Equatable {
     enum Kind: String, CaseIterable, Identifiable {
         case lab = "실습실 신청"
@@ -61,9 +68,11 @@ struct DashboardRequest: Identifiable, Equatable {
     }
 
     enum Status: String, Equatable {
+        case notApplied = "신청하기"
         case completed = "신청 완료"
         case pending = "승인 대기"
         case reserved = "예약 완료"
+        case rejected = "반려됨"
     }
 
     let id = UUID()
