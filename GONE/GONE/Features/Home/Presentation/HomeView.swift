@@ -103,11 +103,6 @@ private struct ProfileSummaryCard: View {
                         .font(.caption)
                         .foregroundStyle(Color.goneTextSecondary)
                 }
-                HStack(spacing: 0) {
-                    ScoreView(title: "벌점", value: "-\(profile.penaltyPoints)", color: .gonePenalty)
-                    ScoreView(title: "현재 점수", value: "+\(profile.totalPoints)점", color: .goneTextPrimary)
-                }
-                Divider()
                 HStack(alignment: .center, spacing: GONESpacing.medium) {
                     Text("내 역할")
                         .font(.footnote)
@@ -139,21 +134,6 @@ private struct ProfileSummaryCard: View {
         case 1: Color(red: 230 / 255, green: 237 / 255, blue: 249 / 255)
         default: Color(red: 241 / 255, green: 243 / 255, blue: 245 / 255)
         }
-    }
-}
-
-private struct ScoreView: View {
-    let title: String
-    let value: String
-    let color: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: GONESpacing.xSmall) {
-            Text(title).font(.caption2).foregroundStyle(Color.goneTextSecondary)
-            Text(value).font(.headline).foregroundStyle(color)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -479,7 +459,6 @@ private struct RequestStatusSection: View {
                     }
                     .scaleEffect(transitioningRequestID == request.id ? 0.97 : 1)
                     .opacity(transitioningRequestID == request.id ? 0.72 : 1)
-                    .offset(x: transitioningRequestID == request.id ? -8 : 0)
                 }
                 .buttonStyle(.plain)
                 .disabled(transitioningRequestID != nil)
