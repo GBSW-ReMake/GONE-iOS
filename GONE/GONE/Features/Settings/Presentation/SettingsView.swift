@@ -1,10 +1,29 @@
 import SwiftUI
 
 struct SettingsView: View {
+    private enum ActivityFilter: String, CaseIterable, Identifiable {
+        case all = "전체"
+        case lab = "실습실"
+        case outing = "외출"
+        case schoolCamping = "스쿨캠핑"
+
+        var id: String { rawValue }
+
+        func includes(_ activity: RecentActivity) -> Bool {
+            switch self {
+            case .all: true
+            case .lab: activity.kind == .lab
+            case .outing: activity.kind == .outing
+            case .schoolCamping: activity.kind == .schoolCamping
+            }
+        }
+    }
+
     @StateObject private var viewModel: SettingsViewModel
     private let onActivityTap: (RecentActivity.Kind) -> Void
     @State private var selectedMenuTitle: String?
     @State private var isShowingLogoutConfirmation = false
+    @State private var activityFilter: ActivityFilter = .all
 
     init(
         viewModel: SettingsViewModel,
@@ -94,9 +113,9 @@ struct SettingsView: View {
         SettingsCard {
             HStack(spacing: GONESpacing.medium) {
                 Text(profile.initial)
-                    .font(.title2.weight(.bold))
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(.white)
-                    .frame(width: 62, height: 62)
+                    .frame(width: 46, height: 46)
                     .background(Color.goneTextPrimary, in: Circle())
                     .accessibilityLabel("\(profile.name) 프로필")
                 VStack(alignment: .leading, spacing: GONESpacing.xSmall) {
@@ -109,22 +128,17 @@ struct SettingsView: View {
                         .lineLimit(2)
                 }
                 Spacer(minLength: 8)
-                Text("인증됨")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.goneBrandPrimary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
             }
             .accessibilityElement(children: .combine)
         }
     }
 
     private var settingsMenu: some View {
-        SettingsCard {
-            VStack(spacing: 0) {
+        VStack(spacing: GONESpacing.medium) {
+            SettingsCard {
                 settingsMenuRow(title: "알림 설정", systemImage: "bell")
-                Divider()
+            }
+            SettingsCard {
                 settingsMenuRow(title: "문의하기", systemImage: "questionmark.bubble")
             }
         }
@@ -155,17 +169,21 @@ struct SettingsView: View {
     }
 
     private func recentActivitySection(_ activities: [RecentActivity]) -> some View {
+        let filteredActivities = activities.filter(activityFilter.includes)
+
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
             Text("최근 활동")
                 .font(.headline.weight(.bold))
                 .foregroundStyle(Color.goneTextPrimary)
 
-            if activities.isEmpty {
+            activityFilters
+
+            if filteredActivities.isEmpty {
                 SettingsCard {
                     HStack(spacing: GONESpacing.small) {
                         Image(systemName: "clock")
                             .font(.footnote)
-                        Text("최근 예약·신청 활동이 없어요")
+                        Text("최근 \(activityFilter.rawValue) 활동이 없어요")
                             .font(.footnote)
                         Spacer(minLength: 0)
                     }
@@ -173,13 +191,41 @@ struct SettingsView: View {
                     .frame(minHeight: 44)
                 }
             } else {
-                SettingsCard {
-                    VStack(spacing: 0) {
-                        ForEach(Array(activities.enumerated()), id: \.element.id) { index, activity in
+                VStack(spacing: GONESpacing.medium) {
+                    ForEach(filteredActivities) { activity in
+                        SettingsCard {
                             activityRow(activity)
-                            if index < activities.count - 1 { Divider() }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private var activityFilters: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: GONESpacing.small) {
+                ForEach(ActivityFilter.allCases) { filter in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            activityFilter = filter
+                        }
+                    } label: {
+                        Text(filter.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(activityFilter == filter ? .white : Color.goneTextSecondary)
+                            .padding(.horizontal, 12)
+                            .frame(minHeight: 44)
+                            .background(
+                                activityFilter == filter ? Color.goneBrandPrimary : Color.goneSurfacePrimary,
+                                in: Capsule()
+                            )
+                            .overlay(
+                                Capsule().stroke(activityFilter == filter ? .clear : Color.goneBorderDefault)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(activityFilter == filter ? .isSelected : [])
                 }
             }
         }
@@ -208,33 +254,18 @@ struct SettingsView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                VStack(alignment: .trailing, spacing: GONESpacing.small) {
-                    Text(activity.status.rawValue)
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(statusColor(activity.status))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(statusColor(activity.status).opacity(0.12), in: Capsule())
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.goneTextTertiary)
-                }
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.goneTextTertiary)
             }
             .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(activity.kind.rawValue), \(activity.title), \(activity.dateText), \(activity.status.rawValue)")
+        .accessibilityLabel("\(activity.kind.rawValue), \(activity.title), \(activity.dateText)")
         .accessibilityHint("해당 기능 탭으로 이동합니다")
     }
 
-    private func statusColor(_ status: RecentActivity.Status) -> Color {
-        switch status {
-        case .pending: .goneStatusOuting
-        case .completed, .reserved: .goneBrandPrimary
-        case .cancelled: .goneTextSecondary
-        }
-    }
 }
 
 private struct SettingsCard<Content: View>: View {
