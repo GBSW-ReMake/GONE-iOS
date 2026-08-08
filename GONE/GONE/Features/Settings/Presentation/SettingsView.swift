@@ -215,7 +215,7 @@ struct SettingsView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(activityFilter == filter ? .white : Color.goneTextSecondary)
                             .padding(.horizontal, 12)
-                            .frame(minHeight: 44)
+                            .frame(height: 36)
                             .background(
                                 activityFilter == filter ? Color.goneBrandPrimary : Color.goneSurfacePrimary,
                                 in: RoundedRectangle(cornerRadius: 12)
@@ -226,6 +226,7 @@ struct SettingsView: View {
                             )
                     }
                     .buttonStyle(.plain)
+                    .frame(minHeight: 44)
                     .accessibilityAddTraits(activityFilter == filter ? .isSelected : [])
                 }
             }
