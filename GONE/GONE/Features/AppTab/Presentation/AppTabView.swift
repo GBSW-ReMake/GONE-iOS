@@ -10,6 +10,7 @@ struct AppTabView: View {
     @StateObject private var labReservationViewModel: LabReservationViewModel
     @StateObject private var outingViewModel: OutingViewModel
     @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
+    @StateObject private var settingsViewModel: SettingsViewModel
 
     init(role: AccountRole = .student) {
         self.role = role
@@ -21,6 +22,11 @@ struct AppTabView: View {
         )
         _schoolCampingViewModel = StateObject(
             wrappedValue: SchoolCampingViewModel(repository: MockSchoolCampingRepository())
+        )
+        _settingsViewModel = StateObject(
+            wrappedValue: SettingsViewModel(
+                fetchOverview: FetchSettingsOverviewUseCase(repository: MockSettingsRepository())
+            )
         )
     }
 
@@ -46,19 +52,16 @@ struct AppTabView: View {
                 .tabItem { Label("스쿨캠핑", image: "CampingTabIcon") }
                 .tag(AppTab.schoolCamping)
 
-            TabPlaceholderView(title: "설정", systemImage: "gearshape.fill")
+            SettingsView(viewModel: settingsViewModel) { activityKind in
+                switch activityKind {
+                case .lab: selection = .lab
+                case .outing: selection = .outing
+                case .schoolCamping: selection = .schoolCamping
+                }
+            }
                 .tabItem { Label("설정", image: "SettingsTabIcon") }
                 .tag(AppTab.settings)
         }
         .tint(.goneBrandPrimary)
-    }
-}
-
-private struct TabPlaceholderView: View {
-    let title: String
-    let systemImage: String
-
-    var body: some View {
-        ContentUnavailableView(title, systemImage: systemImage, description: Text("준비 중인 기능입니다."))
     }
 }
