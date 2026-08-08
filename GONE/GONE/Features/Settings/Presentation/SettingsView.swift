@@ -171,7 +171,7 @@ struct SettingsView: View {
     private func recentActivitySection(_ activities: [RecentActivity]) -> some View {
         let filteredActivities = activities.filter(activityFilter.includes)
 
-        VStack(alignment: .leading, spacing: GONESpacing.medium) {
+        return VStack(alignment: .leading, spacing: GONESpacing.medium) {
             Text("최근 활동")
                 .font(.headline.weight(.bold))
                 .foregroundStyle(Color.goneTextPrimary)
