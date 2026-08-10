@@ -8,36 +8,38 @@
 import SwiftUI
 
 struct LoginView: View {
-    @StateObject private var viewModel = LoginViewModel()
+    @StateObject private var viewModel: LoginViewModel
 
     private let onLogin: ((LoginCredentials) -> Void)?
     private let onSignUpTapped: () -> Void
+    private let onBackTapped: () -> Void
 
     init(
+        role: AccountRole = .student,
         onLogin: ((LoginCredentials) -> Void)? = nil,
-        onSignUpTapped: @escaping () -> Void = {}
+        onSignUpTapped: @escaping () -> Void = {},
+        onBackTapped: @escaping () -> Void = {}
     ) {
+        _viewModel = StateObject(wrappedValue: LoginViewModel(role: role))
         self.onLogin = onLogin
         self.onSignUpTapped = onSignUpTapped
+        self.onBackTapped = onBackTapped
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                backButton
+                    .padding(.top, GONESpacing.small)
+
                 logo
-                    .padding(.top, GONESpacing.xLarge)
+                    .padding(.top, GONESpacing.large)
 
                 introduction
-                    .padding(.top, 48)
+                    .padding(.top, 28)
 
                 inputFields
                     .padding(.top, 34)
-
-                Picker("계정 유형", selection: $viewModel.role) {
-                    ForEach(AccountRole.allCases) { role in Text(role.title).tag(role) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.top, GONESpacing.xLarge)
 
                 signUpButton
                     .padding(.top, GONESpacing.xLarge)
@@ -61,20 +63,35 @@ struct LoginView: View {
     }
 
     private var logo: some View {
-        HStack(spacing: 0) {
-            Text("G")
-                .foregroundStyle(Color.goneBrandPrimary)
-            Text("ONE")
+        Image("GONELogo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 88, height: 24)
+            .accessibilityLabel("GONE")
+    }
+
+    private var backButton: some View {
+        Button(action: onBackTapped) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.goneTextPrimary)
+                .frame(width: 44, height: 44)
         }
-        .font(GONEFont.sfPro(size: 29, weight: .bold))
-        .accessibilityLabel("GONE")
+        .contentShape(Rectangle())
+        .background(.ultraThinMaterial, in: Circle())
+        .overlay {
+            Circle()
+                .stroke(Color.white.opacity(0.72), lineWidth: 1)
+        }
+        .shadow(color: Color.black.opacity(0.1), radius: 8, y: 3)
+        .accessibilityLabel("로그인 유형 다시 선택")
+        .accessibilityHint("학생 또는 선생님 로그인 선택 화면으로 돌아갑니다.")
     }
 
     private var introduction: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             Text("학교생활을 더 간편하게")
-                .font(GONEFont.sfPro(size: 23, weight: .bold))
+                .font(GONEFont.sfPro(size: 22, weight: .bold))
                 .foregroundStyle(Color.goneTextPrimary)
 
             Text("GONE에 로그인하고 학교의 서비스를\n한곳에서 이용해보세요.")

@@ -25,11 +25,15 @@ final class LoginViewModel: ObservableObject {
             }
         }
     }
-    @Published var role: AccountRole = .student
+    let role: AccountRole
 
     @Published private(set) var identifierErrorMessage: String?
     @Published private(set) var passwordErrorMessage: String?
     @Published private(set) var loginErrorMessage: String?
+
+    init(role: AccountRole = .student) {
+        self.role = role
+    }
 
     var isLoginEnabled: Bool {
         !identifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.isEmpty
