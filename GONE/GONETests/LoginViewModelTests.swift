@@ -24,8 +24,16 @@ final class LoginViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.makeCredentials(),
-            LoginCredentials(identifier: "goneUser", password: "password")
+            LoginCredentials(identifier: "goneUser", password: "password", role: .student)
         )
+    }
+
+    func testMakeCredentialsUsesInjectedRole() {
+        let viewModel = LoginViewModel(role: .teacher)
+        viewModel.identifier = "teacher"
+        viewModel.password = "password"
+
+        XCTAssertEqual(viewModel.makeCredentials()?.role, .teacher)
     }
 
     func testMakeCredentialsShowsFieldErrorsForEmptyInput() {
