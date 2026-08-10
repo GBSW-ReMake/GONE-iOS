@@ -13,6 +13,7 @@ doc/
 ├── PULL_REQUEST_TEMPLATE.md
 ├── ARCHITECTURE.md
 ├── DESIGN_SYSTEM.md
+├── SENTENCE_REFINEMENT.md
 ├── issues/
 │   └── _TEMPLATE-report.md
 ├── reports/
@@ -63,3 +64,4 @@ doc/fe/reports/feat #12 실습실 신청 최종 보고서.md
 | [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) | PR 본문 템플릿 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Feature 중심 MVVM 구조와 계층 책임 |
 | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | GONE 디자인 시스템 v1 초안 |
+| [SENTENCE_REFINEMENT.md](SENTENCE_REFINEMENT.md) | 코드 주석과 문서의 문장 다듬기 규칙 |
