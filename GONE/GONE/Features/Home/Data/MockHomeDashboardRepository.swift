@@ -4,7 +4,7 @@ struct MockHomeDashboardRepository: HomeDashboardRepository {
     func fetchDashboard() async throws -> HomeDashboard {
         let currentYear = Calendar.current.component(.year, from: Date())
 
-        HomeDashboard(
+        return HomeDashboard(
             profile: StudentProfile(
                 name: "김은찬",
                 department: "소프트웨어개발과",
