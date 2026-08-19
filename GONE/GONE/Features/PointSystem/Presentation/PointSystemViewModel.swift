@@ -70,7 +70,7 @@ final class PointSystemViewModel: ObservableObject {
         guard !selectedStudents.isEmpty else { return false }
         let newRecords = selectedStudents.compactMap { student -> PointIssueRecord? in
             guard let draft = draftsByStudentID[student.id], draft.points > 0, !draft.item.isEmpty else { return nil }
-            PointIssueRecord(
+            return PointIssueRecord(
                 id: UUID().uuidString,
                 student: student,
                 kind: draft.kind,
