@@ -63,7 +63,6 @@ final class PointSystemViewModel: ObservableObject {
         do {
             try await repository.issue(records: newRecords)
             records.insert(contentsOf: newRecords.reversed(), at: 0)
-            clearSelection()
             return true
         } catch {
             return false

@@ -13,6 +13,7 @@ struct PointSystemView: View {
     @State private var selectedSection: Section = .issue
     @State private var isShowingStudentSearch = false
     @State private var isShowingIssueForm = false
+    @State private var successMessage: String?
     @StateObject private var viewModel: PointSystemViewModel
 
     init() {
@@ -38,10 +39,26 @@ struct PointSystemView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await viewModel.load() }
             .sheet(isPresented: $isShowingStudentSearch) {
-                StudentSearchView(viewModel: viewModel)
+                StudentSearchView(viewModel: viewModel) { _ in
+                    isShowingStudentSearch = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        isShowingIssueForm = true
+                    }
+                }
             }
-            .sheet(isPresented: $isShowingIssueForm) {
-                PointIssueFormView(viewModel: viewModel)
+            .fullScreenCover(isPresented: $isShowingIssueForm) {
+                PointIssueFormView(viewModel: viewModel) {
+                    isShowingIssueForm = false
+                    successMessage = "학생을 추가했습니다."
+                }
+            }
+            .alert("상벌점 발급 완료", isPresented: Binding(
+                get: { successMessage != nil },
+                set: { if !$0 { successMessage = nil } }
+            )) {
+                Button("확인") { successMessage = nil }
+            } message: {
+                Text(successMessage ?? "")
             }
         }
     }
@@ -142,9 +159,11 @@ private struct IssueContent: View {
     }
 }
 
+@MainActor
 private struct StudentSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: PointSystemViewModel
+    let onStudentAdded: (PointStudent) -> Void
     @State private var query = ""
 
     private var filteredStudents: [PointStudent] {
@@ -158,7 +177,7 @@ private struct StudentSearchView: View {
             List(filteredStudents) { student in
                 Button {
                     viewModel.addStudent(student)
-                    dismiss()
+                    onStudentAdded(student)
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
@@ -179,63 +198,162 @@ private struct StudentSearchView: View {
     }
 }
 
+@MainActor
 private struct PointIssueFormView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: PointSystemViewModel
+    let onIssued: () -> Void
     @State private var draft = PointIssueDraft()
     @State private var isIssuing = false
-    @State private var didSucceed = false
-    @State private var issuedStudents: [PointStudent] = []
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if didSucceed {
-                    PointIssueCompletionView(students: issuedStudents, draft: draft) { dismiss() }
-                } else {
-                    Form {
-                Section("발급 대상") {
-                    ForEach(viewModel.selectedStudents) { student in
-                        HStack {
-                            Text(student.name)
-                            Spacer()
-                            Text(student.studentInfo).font(.caption).foregroundStyle(Color.goneTextSecondary)
-                        }
-                    }
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    formHeader
+                        .padding(.top, 28)
+                    successBanner
+                        .padding(.top, 28)
+                    studentCard
+                        .padding(.top, 20)
+                    kindPicker
+                        .padding(.top, 20)
+                    issueItemField
+                        .padding(.top, 38)
+                    memoField
+                        .padding(.top, 34)
                 }
-                Section("점수") {
-                    Picker("구분", selection: $draft.kind) {
-                        ForEach(PointKind.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    Stepper("점수 \(draft.points)점", value: $draft.points, in: 1...10)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
+            actionBar
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 18)
+        }
+        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .preferredColorScheme(.light)
+    }
+
+    private var formHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("상벌점 시스템")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.goneTextSecondary)
+            Text("상벌점 점수 발급")
+                .font(.system(size: 30, weight: .bold))
+                .foregroundStyle(Color.goneTextPrimary)
+        }
+    }
+
+    private var successBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 15, weight: .bold))
+            Text("\(viewModel.selectedStudents.first?.name ?? "학생") 학생을 추가했습니다.")
+                .font(.system(size: 15, weight: .medium))
+        }
+        .foregroundStyle(Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .frame(height: 61)
+        .background(Color(red: 225 / 255, green: 243 / 255, blue: 236 / 255), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var studentCard: some View {
+        HStack {
+            if let student = viewModel.selectedStudents.first {
+                Text(student.name).font(.system(size: 20, weight: .bold))
+                Text(student.studentInfo).font(.system(size: 13)).foregroundStyle(Color.goneTextSecondary)
+                Spacer()
+                Button { viewModel.removeStudent(student); dismiss() } label: {
+                    Image(systemName: "xmark").font(.system(size: 17, weight: .bold)).foregroundStyle(.black)
                 }
-                Section("발급 항목") {
-                    TextField("발급 사유", text: $draft.item)
-                    TextField("메모 (선택)", text: $draft.memo, axis: .vertical)
-                        .lineLimit(3...6)
+                .frame(width: 44, height: 44)
+                .accessibilityLabel("\(student.name) 삭제")
+            }
+        }
+        .padding(.horizontal, 22)
+        .frame(height: 80)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var kindPicker: some View {
+        HStack(spacing: 20) {
+            kindButton(.reward)
+            kindButton(.penalty)
+        }
+    }
+
+    private func kindButton(_ kind: PointKind) -> some View {
+        Button { draft.kind = kind } label: {
+            Text(kind.rawValue)
+                .font(.system(size: 17, weight: .bold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 80)
+                .foregroundStyle(draft.kind == kind ? .white : (kind == .reward ? Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255) : Color.goneStatusError))
+                .background(draft.kind == kind ? (kind == .reward ? Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255) : Color.goneStatusError) : .white, in: RoundedRectangle(cornerRadius: 14))
+                .overlay { RoundedRectangle(cornerRadius: 14).stroke(kind == .reward ? Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255) : Color.goneStatusError, lineWidth: draft.kind == kind ? 0 : 1) }
+        }
+    }
+
+    private var issueItemField: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("발급 항목").font(.system(size: 18, weight: .bold)).foregroundStyle(Color.goneTextPrimary)
+            Menu {
+                Button("[2점] 학교 홍보 활동에 성실히 참여한 학생") { draft.points = 2; draft.item = "학교 홍보 활동에 성실히 참여한 학생" }
+                Button("[1점] 교내 행사에 참여한 학생") { draft.points = 1; draft.item = "교내 행사에 참여한 학생" }
+                Button("[3점] 수업시간 교사지시 불이행") { draft.points = 3; draft.item = "수업시간 교사지시 불이행" }
+            } label: {
+                HStack {
+                    Text("[\(draft.points)점] \(draft.item)").font(.system(size: 16, weight: .medium)).foregroundStyle(Color.goneTextPrimary).lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.down").font(.system(size: 18, weight: .medium)).foregroundStyle(.black)
                 }
-                Section {
-                    Button(isIssuing ? "발급 중..." : "발급하기") {
-                        isIssuing = true
-                        issuedStudents = viewModel.selectedStudents
-                        Task {
-                            didSucceed = await viewModel.issue(draft: draft)
-                            isIssuing = false
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .disabled(isIssuing || draft.item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-                    }
+                .padding(.horizontal, 20)
+                .frame(height: 80)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+                .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.goneBorderDefault) }
+            }
+        }
+    }
+
+    private var memoField: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("메모").font(.system(size: 18, weight: .bold)).foregroundStyle(Color.goneTextPrimary)
+            TextField("선택 사항", text: $draft.memo, axis: .vertical)
+                .font(.system(size: 16))
+                .padding(20)
+                .frame(height: 138, alignment: .topLeading)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+                .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault) }
+        }
+    }
+
+    private var actionBar: some View {
+        HStack(spacing: 12) {
+            Button("전체 삭제", role: .destructive) {
+                viewModel.clearSelection()
+                dismiss()
+            }
+            .font(.system(size: 15, weight: .bold))
+            .frame(width: 145, height: 56)
+            .foregroundStyle(Color.goneStatusError)
+            .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.goneStatusError, lineWidth: 1.5) }
+            Button(isIssuing ? "발급 중..." : "명단 추가하기") {
+                isIssuing = true
+                Task {
+                    let didIssue = await viewModel.issue(draft: draft)
+                    isIssuing = false
+                    if didIssue { onIssued() }
                 }
             }
-            .navigationTitle("상벌점 폼")
-            .toolbar {
-                if !didSucceed {
-                    ToolbarItem(placement: .cancellationAction) { Button("취소") { dismiss() } }
-                }
-            }
+            .font(.system(size: 17, weight: .bold))
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .foregroundStyle(.white)
+            .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
+            .disabled(isIssuing)
         }
     }
 }
@@ -357,9 +475,10 @@ private struct IssueEmptyState: View {
 
     var body: some View {
         VStack(spacing: GONESpacing.large) {
-            Image(systemName: "plus.circle.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(Color.goneBrandPrimary)
+            Image("PointPlusIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 88, height: 88)
                 .accessibilityHidden(true)
             VStack(spacing: GONESpacing.small) {
                 Text("발급 대상자를 추가해 주세요")
