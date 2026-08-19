@@ -563,7 +563,7 @@ private struct StatisticsContent: View {
     }
 
     private func statisticCard(title: String, value: Int, unit: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.goneTextSecondary)
@@ -577,8 +577,8 @@ private struct StatisticsContent: View {
             .foregroundStyle(color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .frame(height: 144, alignment: .topLeading)
+        .padding(14)
+        .frame(height: 120, alignment: .topLeading)
         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
     }
 }
