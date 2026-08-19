@@ -251,28 +251,26 @@ private struct PointIssueFormView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    formHeader
-                        .padding(.top, 28)
-                    successBanner
-                        .padding(.top, 28)
-                    studentCard
-                        .padding(.top, 20)
-                    kindPicker
-                        .padding(.top, 20)
-                    issueItemField
-                        .padding(.top, 38)
-                    memoField
-                        .padding(.top, 34)
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+            VStack(alignment: .leading, spacing: 0) {
+                formHeader
+                    .padding(.top, 12)
+                successBanner
+                    .padding(.top, 14)
+                studentCard
+                    .padding(.top, 12)
+                kindPicker
+                    .padding(.top, 12)
+                issueItemField
+                    .padding(.top, 18)
+                memoField
+                    .padding(.top, 16)
             }
+            .padding(.horizontal, 24)
+            Spacer(minLength: 0)
             actionBar
                 .padding(.horizontal, 24)
-                .padding(.top, 12)
-                .padding(.bottom, 18)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
         }
         .background(Color.goneScreenBackground.ignoresSafeArea())
         .preferredColorScheme(.light)
@@ -299,7 +297,7 @@ private struct PointIssueFormView: View {
         .foregroundStyle(Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255))
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .frame(height: 61)
+        .frame(height: 44)
         .background(Color(red: 225 / 255, green: 243 / 255, blue: 236 / 255), in: RoundedRectangle(cornerRadius: 8))
     }
 
@@ -315,7 +313,7 @@ private struct PointIssueFormView: View {
             .accessibilityLabel("\(student.name) 삭제")
         }
         .padding(.horizontal, 22)
-        .frame(height: 80)
+        .frame(height: 60)
         .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
     }
 
@@ -331,7 +329,7 @@ private struct PointIssueFormView: View {
             Text(kind.rawValue)
                 .font(.system(size: 17, weight: .bold))
                 .frame(maxWidth: .infinity)
-                .frame(height: 80)
+                .frame(height: 56)
                 .foregroundStyle(draft.kind == kind ? .white : (kind == .reward ? Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255) : Color.goneStatusError))
                 .background(draft.kind == kind ? (kind == .reward ? Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255) : Color.goneStatusError) : .white, in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).stroke(kind == .reward ? Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255) : Color.goneStatusError, lineWidth: draft.kind == kind ? 0 : 1) }
@@ -352,7 +350,7 @@ private struct PointIssueFormView: View {
                     Image(systemName: "chevron.down").font(.system(size: 18, weight: .medium)).foregroundStyle(.black)
                 }
                 .padding(.horizontal, 20)
-                .frame(height: 80)
+                .frame(height: 56)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
                 .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.goneBorderDefault) }
             }
@@ -365,7 +363,7 @@ private struct PointIssueFormView: View {
             TextField("선택 사항", text: $draft.memo, axis: .vertical)
                 .font(.system(size: 16))
                 .padding(20)
-                .frame(height: 138, alignment: .topLeading)
+                .frame(height: 80, alignment: .topLeading)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault) }
         }
@@ -378,7 +376,7 @@ private struct PointIssueFormView: View {
                 dismiss()
             }
             .font(.system(size: 15, weight: .bold))
-            .frame(width: 145, height: 56)
+            .frame(width: 112, height: 52)
             .foregroundStyle(Color.goneStatusError)
             .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.goneStatusError, lineWidth: 1.5) }
             Button("명단 추가하기") {
@@ -387,7 +385,7 @@ private struct PointIssueFormView: View {
             }
             .font(.system(size: 17, weight: .bold))
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: 52)
             .foregroundStyle(.white)
             .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
         }
