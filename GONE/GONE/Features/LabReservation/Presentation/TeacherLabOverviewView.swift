@@ -36,29 +36,35 @@ struct TeacherLabOverviewView: View {
             VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 VStack(alignment: .leading, spacing: GONESpacing.small) {
                     Text("실습실 대여")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(Color.goneTextSecondary)
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(dateTitle)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(Color.goneTextPrimary)
-                        Spacer()
-                        DatePicker("조회 날짜", selection: $viewModel.selectedDate, displayedComponents: .date)
-                            .labelsHidden()
-                            .tint(Color.goneBrandPrimary)
-                    }
+                    dateTitle
+                        .font(.title2.weight(.bold))
                 }
 
-                Picker("층 선택", selection: Binding(
-                    get: { viewModel.selectedFloor },
-                    set: { floor in Task { await viewModel.selectFloor(floor) } }
-                )) {
+                HStack(spacing: 4) {
                     ForEach(LabFloor.allCases) { floor in
-                        Text(floor.title).tag(floor)
+                        Button {
+                            Task { await viewModel.selectFloor(floor) }
+                        } label: {
+                            Text(floor.title)
+                                .font(.subheadline.weight(viewModel.selectedFloor == floor ? .bold : .semibold))
+                                .foregroundStyle(viewModel.selectedFloor == floor ? Color.goneBrandPrimary : Color.goneTextTertiary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(
+                                    viewModel.selectedFloor == floor ? Color(.systemBackground) : .clear,
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(viewModel.selectedFloor == floor ? .isSelected : [])
                     }
                 }
-                .pickerStyle(.segmented)
-                .frame(height: 48)
+                .padding(4)
+                .background(Color.goneSurfaceDisabled, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("층 선택")
 
                 HStack {
                     Text("\(viewModel.selectedFloor.title) 실습실")
@@ -70,7 +76,7 @@ struct TeacherLabOverviewView: View {
                         .foregroundStyle(Color.goneTextSecondary)
                 }
 
-                VStack(spacing: GONESpacing.medium) {
+                VStack(spacing: GONESpacing.large) {
                     ForEach(rooms) { status in
                         if let booking = status.booking {
                             NavigationLink {
@@ -94,11 +100,14 @@ struct TeacherLabOverviewView: View {
         }
     }
 
-    private var dateTitle: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "M월 d일 실습실 현황"
-        return formatter.string(from: viewModel.selectedDate)
+    private var dateTitle: Text {
+        let calendar = Calendar.current
+        let month = calendar.component(.month, from: viewModel.selectedDate)
+        let day = calendar.component(.day, from: viewModel.selectedDate)
+        return Text("\(month)월")
+            .foregroundStyle(Color.goneBrandPrimary)
+        + Text(" \(day)일 실습실 현황")
+            .foregroundStyle(Color.goneTextPrimary)
     }
 }
 
@@ -111,7 +120,7 @@ private struct TeacherLabRoomCard: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(status.isReserved ? Color.goneBrandPrimary : Color.goneTextTertiary)
                 .frame(width: 24)
-            VStack(alignment: .leading, spacing: GONESpacing.xSmall) {
+            VStack(alignment: .leading, spacing: GONESpacing.small) {
                 Text(status.room.name)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.goneTextPrimary)
@@ -132,13 +141,13 @@ private struct TeacherLabRoomCard: View {
             Spacer(minLength: 8)
             Text(status.booking?.period.rawValue ?? "미예약")
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(status.isReserved ? Color.goneBrandPrimary : Color.goneTextTertiary)
+                .foregroundStyle(periodColor)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
-                .background((status.isReserved ? Color.goneBrandPrimary : Color.goneSurfaceDisabled).opacity(0.12), in: Capsule())
+                .background(periodColor.opacity(0.12), in: Capsule())
         }
         .padding(.horizontal, GONESpacing.large)
-        .padding(.vertical, 14)
+        .padding(.vertical, 20)
         .frame(minHeight: 80)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
@@ -149,6 +158,11 @@ private struct TeacherLabRoomCard: View {
     private var cardAccessibilityLabel: String {
         guard let booking = status.booking else { return "\(status.room.name), 미예약" }
         return "\(status.room.name), \(booking.booker) 외 \(booking.memberCount)명, \(booking.period.rawValue), \(booking.usageTime)"
+    }
+
+    private var periodColor: Color {
+        guard let period = status.booking?.period else { return .goneTextTertiary }
+        return period == .afterSchool ? .goneStatusOuting : .goneBrandPrimary
     }
 }
 
@@ -161,10 +175,10 @@ private struct TeacherLabBookingDetailView: View {
             VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 Text(booking.period.rawValue)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.goneBrandPrimary)
+                    .foregroundStyle(periodColor)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 9)
-                    .background(Color.goneBrandPrimary.opacity(0.1), in: Capsule())
+                    .background(periodColor.opacity(0.12), in: Capsule())
 
                 Text(dateTitle)
                     .font(.subheadline)
@@ -203,5 +217,9 @@ private struct TeacherLabBookingDetailView: View {
         formatter.locale = Locale(identifier: "ko_KR")
         formatter.dateFormat = "M월 d일 EEEE"
         return formatter.string(from: booking.date)
+    }
+
+    private var periodColor: Color {
+        booking.period == .afterSchool ? .goneStatusOuting : .goneBrandPrimary
     }
 }
