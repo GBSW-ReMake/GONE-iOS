@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppTab: Hashable {
-    case home, lab, outing, schoolCamping, settings
+    case home, lab, outing, schoolCamping, points, settings
 }
 
 struct AppTabView: View {
@@ -34,6 +34,7 @@ struct AppTabView: View {
         TabView(selection: animatedSelection) {
             HomeView(
                 viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
+                role: role,
                 labReservation: labReservationViewModel.reservation,
                 outings: outingViewModel.outings,
                 schoolCampingReservation: schoolCampingViewModel.reservation,
@@ -52,9 +53,15 @@ struct AppTabView: View {
                 .tabItem { Label("외출", image: "OutingTabIcon") }
                 .tag(AppTab.outing)
 
-            SchoolCampingView(viewModel: schoolCampingViewModel)
-                .tabItem { Label("스쿨캠핑", image: "CampingTabIcon") }
-                .tag(AppTab.schoolCamping)
+            if role == .student {
+                SchoolCampingView(viewModel: schoolCampingViewModel)
+                    .tabItem { Label("스쿨캠핑", image: "CampingTabIcon") }
+                    .tag(AppTab.schoolCamping)
+            } else {
+                PointSystemView()
+                    .tabItem { Label("상벌점", image: "PointTabIcon") }
+                    .tag(AppTab.points)
+            }
 
             SettingsView(viewModel: settingsViewModel) { activityKind in
                 switch activityKind {
