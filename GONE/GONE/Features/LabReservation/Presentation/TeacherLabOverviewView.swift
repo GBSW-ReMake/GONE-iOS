@@ -66,27 +66,29 @@ struct TeacherLabOverviewView: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("층 선택")
 
-                HStack {
-                    Text("\(viewModel.selectedFloor.title) 실습실")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.goneTextPrimary)
-                    Spacer()
-                    Text("예약 \(rooms.filter(\.isReserved).count)개")
-                        .font(.caption)
-                        .foregroundStyle(Color.goneTextSecondary)
-                }
+                VStack(alignment: .leading, spacing: GONESpacing.large) {
+                    HStack {
+                        Text("\(viewModel.selectedFloor.title) 실습실")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Color.goneTextPrimary)
+                        Spacer()
+                        Text("예약 \(rooms.filter(\.isReserved).count)개")
+                            .font(.caption)
+                            .foregroundStyle(Color.goneTextSecondary)
+                    }
 
-                VStack(spacing: GONESpacing.large) {
-                    ForEach(rooms) { status in
-                        if let booking = status.booking {
-                            NavigationLink {
-                                TeacherLabBookingDetailView(status: status, booking: booking)
-                            } label: {
+                    VStack(spacing: GONESpacing.large) {
+                        ForEach(rooms) { status in
+                            if let booking = status.booking {
+                                NavigationLink {
+                                    TeacherLabBookingDetailView(status: status, booking: booking)
+                                } label: {
+                                    TeacherLabRoomCard(status: status)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
                                 TeacherLabRoomCard(status: status)
                             }
-                            .buttonStyle(.plain)
-                        } else {
-                            TeacherLabRoomCard(status: status)
                         }
                     }
                 }
