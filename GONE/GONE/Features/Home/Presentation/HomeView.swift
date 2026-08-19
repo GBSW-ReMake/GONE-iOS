@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
     private let role: AccountRole
+    private let unreadNotificationCount: Int
     private let labReservation: LabReservation?
     private let outings: [OutingRequest]
     private let schoolCampingReservation: SchoolCampingReservation?
@@ -13,6 +14,7 @@ struct HomeView: View {
     init(
         viewModel: HomeViewModel,
         role: AccountRole = .student,
+        unreadNotificationCount: Int = 0,
         labReservation: LabReservation? = nil,
         outings: [OutingRequest] = [],
         schoolCampingReservation: SchoolCampingReservation? = nil,
@@ -22,6 +24,7 @@ struct HomeView: View {
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.role = role
+        self.unreadNotificationCount = unreadNotificationCount
         self.labReservation = labReservation
         self.outings = outings
         self.schoolCampingReservation = schoolCampingReservation
@@ -54,7 +57,7 @@ struct HomeView: View {
     private func dashboardContent(_ dashboard: HomeDashboard) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
-                header(for: dashboard.profile)
+                header()
                 PointSummaryCard(profile: dashboard.profile, showsPointSummary: role == .student)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 AcademicScheduleSection(
@@ -83,15 +86,31 @@ struct HomeView: View {
         role == .teacher ? requests.filter { $0.kind != .schoolCamping } : requests
     }
 
-    private func header(for profile: StudentProfile) -> some View {
-        VStack(alignment: .leading, spacing: GONESpacing.small) {
-            Text("7월 20일 월요일")
-                .font(.caption.weight(.semibold))
-                .tracking(1.2)
-                .foregroundStyle(Color.goneTextSecondary)
-            Text("안녕하세요, \(profile.name)님")
-                .font(.title2.weight(.bold))
-                .accessibilityLabel("안녕하세요, \(profile.name)님")
+    private func header() -> some View {
+        HStack {
+            Image("GONELogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 88, height: 24)
+                .accessibilityLabel("GONE")
+            Spacer()
+            Button(action: onNotificationTap) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.title2.weight(.medium))
+                        .foregroundStyle(Color.goneTextPrimary)
+                        .frame(width: 48, height: 48)
+                    if unreadNotificationCount > 0 {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 10, height: 10)
+                            .offset(x: -1, y: 3)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(unreadNotificationCount > 0 ? "알림, 읽지 않은 알림 \(unreadNotificationCount)개" : "알림")
+            .accessibilityHint("새로운 알림을 확인합니다.")
         }
     }
 }
