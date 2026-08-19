@@ -145,27 +145,30 @@ private struct IssueContent: View {
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.goneTextPrimary)
                 ForEach(selectedStudents) { student in
-                    HStack {
-                        Button { onStudentTap(student) } label: {
+                    Button { onStudentTap(student) } label: {
+                        HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(student.name).font(.headline)
                                 Text(student.studentInfo).font(.caption).foregroundStyle(Color.goneTextSecondary)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Spacer()
+                            Color.clear.frame(width: 40, height: 40)
                         }
-                        .buttonStyle(.plain)
-                        Spacer()
-                        Button { onRemove(student) } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 19, weight: .heavy))
-                                .foregroundStyle(Color.goneTextPrimary)
-                                .frame(width: 44, height: 44)
-                        }
-                        .accessibilityLabel("\(student.name) 발급 명단에서 삭제")
                     }
                     .padding(.horizontal, GONESpacing.large)
                     .frame(height: 72)
                     .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
+                    .overlay(alignment: .trailing) {
+                        Button { onRemove(student) } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 16, weight: .heavy))
+                                .foregroundStyle(Color.goneTextPrimary)
+                                .frame(width: 40, height: 40)
+                        }
+                        .padding(.trailing, 12)
+                        .accessibilityLabel("\(student.name) 발급 명단에서 삭제")
+                    }
+                    .buttonStyle(.plain)
                 }
                 Button("+ 발급 대상자 추가", action: onAddTap)
                     .font(.system(size: 14, weight: .bold))
@@ -249,6 +252,7 @@ private struct PointIssueFormView: View {
     let student: PointStudent
     let onSaved: () -> Void
     @State private var draft: PointIssueDraft
+    @FocusState private var isMemoFocused: Bool
 
     init(viewModel: PointSystemViewModel, student: PointStudent, onSaved: @escaping () -> Void) {
         self.viewModel = viewModel
@@ -282,6 +286,8 @@ private struct PointIssueFormView: View {
         }
         .background(Color.goneScreenBackground.ignoresSafeArea())
         .preferredColorScheme(.light)
+        .contentShape(Rectangle())
+        .onTapGesture { isMemoFocused = false }
     }
 
     private var formNavigationHeader: some View {
@@ -377,8 +383,10 @@ private struct PointIssueFormView: View {
             Text("메모").font(.system(size: 18, weight: .bold)).foregroundStyle(Color.goneTextPrimary)
             TextField("선택 사항", text: $draft.memo, axis: .vertical)
                 .font(.system(size: 16))
+                .focused($isMemoFocused)
+                .lineLimit(3, reservesSpace: true)
                 .padding(20)
-                .frame(height: 92, alignment: .topLeading)
+                .frame(height: 100, alignment: .topLeading)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
                 .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.goneBorderDefault) }
         }
@@ -418,11 +426,11 @@ private struct PointIssueCompletionView: View {
                 .scaledToFit()
                 .frame(width: 112, height: 112)
                 .accessibilityHidden(true)
-                .padding(.top, 82)
+                .padding(.top, 58)
             Text("점수 발급이 완료되었습니다.")
                 .font(.system(size: 25, weight: .bold))
                 .foregroundStyle(Color.goneTextPrimary)
-                .padding(.top, 38)
+                .padding(.top, 28)
             VStack(alignment: .leading, spacing: 12) {
                 Text("발급 명단").font(.system(size: 18, weight: .bold))
                 ForEach(records) { record in
@@ -441,12 +449,13 @@ private struct PointIssueCompletionView: View {
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 18)
-                    .frame(height: 84)
+                    .frame(height: 78)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
                 }
             }
-            .padding(.top, 74)
+            .padding(.top, 58)
+            .frame(maxWidth: 320)
             Spacer()
             HStack(spacing: 12) {
                 Button("취소", action: onDone)
