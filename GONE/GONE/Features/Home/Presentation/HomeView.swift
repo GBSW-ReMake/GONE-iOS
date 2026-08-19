@@ -55,7 +55,9 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 header(for: dashboard.profile)
-                PointSummaryCard(profile: dashboard.profile)
+                if role == .student {
+                    PointSummaryCard(profile: dashboard.profile)
+                }
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 AcademicScheduleSection(
                     schedules: dashboard.academicSchedules,
