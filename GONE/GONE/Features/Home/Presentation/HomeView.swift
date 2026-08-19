@@ -52,7 +52,7 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 header(for: dashboard.profile)
-                ProfileSummaryCard(profile: dashboard.profile)
+                PointSummaryCard(profile: dashboard.profile)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 AcademicScheduleSection(
                     schedules: dashboard.academicSchedules,
@@ -89,7 +89,7 @@ struct HomeView: View {
     }
 }
 
-private struct ProfileSummaryCard: View {
+private struct PointSummaryCard: View {
     let profile: StudentProfile
 
     var body: some View {
@@ -103,6 +103,13 @@ private struct ProfileSummaryCard: View {
                         .font(.caption)
                         .foregroundStyle(Color.goneTextSecondary)
                 }
+
+                HStack(spacing: GONESpacing.medium) {
+                    pointColumn(title: "상점", value: profile.rewardPoints, color: Color.goneBrandPrimary)
+                    pointColumn(title: "벌점", value: profile.penaltyPoints, color: Color.gonePenalty)
+                    pointColumn(title: "현재 점수", value: profile.totalPoints, color: Color.goneTextPrimary)
+                }
+
                 HStack(alignment: .center, spacing: GONESpacing.medium) {
                     Text("내 역할")
                         .font(.footnote)
@@ -116,8 +123,26 @@ private struct ProfileSummaryCard: View {
                             .background(roleBackgroundColor(at: index), in: RoundedRectangle(cornerRadius: 10))
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("내 역할: \(profile.roles.joined(separator: ", "))")
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("상벌점 현황")
+    }
+
+    private func pointColumn(title: String, value: Int, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: GONESpacing.small) {
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(Color.goneTextSecondary)
+            Text("\(value >= 0 ? "+" : "")\(value)")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) \(value)점")
     }
 
     private func roleForegroundColor(at index: Int) -> Color {
