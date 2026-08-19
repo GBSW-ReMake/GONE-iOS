@@ -104,7 +104,7 @@ struct HomeView: View {
                         Circle()
                             .fill(Color.red)
                             .frame(width: 10, height: 10)
-                            .offset(x: 1, y: 1)
+                            .offset(x: -1, y: 3)
                     }
                 }
             }
