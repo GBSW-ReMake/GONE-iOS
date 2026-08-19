@@ -10,6 +10,7 @@ struct HomeView: View {
     private let onLabRequestTap: () -> Void
     private let onOutingRequestTap: () -> Void
     private let onSchoolCampingRequestTap: () -> Void
+    private let onNotificationTap: () -> Void
 
     init(
         viewModel: HomeViewModel,
@@ -20,7 +21,8 @@ struct HomeView: View {
         schoolCampingReservation: SchoolCampingReservation? = nil,
         onLabRequestTap: @escaping () -> Void = {},
         onOutingRequestTap: @escaping () -> Void = {},
-        onSchoolCampingRequestTap: @escaping () -> Void = {}
+        onSchoolCampingRequestTap: @escaping () -> Void = {},
+        onNotificationTap: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.role = role
@@ -31,6 +33,7 @@ struct HomeView: View {
         self.onLabRequestTap = onLabRequestTap
         self.onOutingRequestTap = onOutingRequestTap
         self.onSchoolCampingRequestTap = onSchoolCampingRequestTap
+        self.onNotificationTap = onNotificationTap
     }
 
     var body: some View {
