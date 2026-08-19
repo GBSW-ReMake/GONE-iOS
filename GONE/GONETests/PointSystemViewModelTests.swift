@@ -51,6 +51,7 @@ final class PointSystemViewModelTests: XCTestCase {
 
         XCTAssertTrue(didIssue)
         XCTAssertEqual(viewModel.records.count, 1)
+        XCTAssertEqual(viewModel.lastIssuedRecords.count, 1)
         XCTAssertTrue(viewModel.selectedStudents.isEmpty)
     }
 

@@ -15,6 +15,7 @@ final class PointSystemViewModel: ObservableObject {
     @Published private(set) var selectedStudents: [PointStudent] = []
     @Published private(set) var draftsByStudentID: [String: PointIssueDraft] = [:]
     @Published private(set) var records: [PointIssueRecord] = []
+    @Published private(set) var lastIssuedRecords: [PointIssueRecord] = []
 
     private let repository: PointRepository
 
@@ -84,6 +85,7 @@ final class PointSystemViewModel: ObservableObject {
         do {
             try await repository.issue(records: newRecords)
             records.insert(contentsOf: newRecords.reversed(), at: 0)
+            lastIssuedRecords = newRecords
             clearSelection()
             return true
         } catch {
