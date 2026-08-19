@@ -145,7 +145,12 @@ private struct IssueContent: View {
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.goneTextPrimary)
                 ForEach(selectedStudents) { student in
-                    Button { onStudentTap(student) } label: {
+                    ZStack {
+                        Button { onStudentTap(student) } label: {
+                            RoundedRectangle(cornerRadius: GONECornerRadius.button)
+                                .fill(Color.goneSurfacePrimary)
+                        }
+                        .buttonStyle(.plain)
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(student.name).font(.headline)
@@ -154,26 +159,28 @@ private struct IssueContent: View {
                             Spacer()
                             Color.clear.frame(width: 40, height: 40)
                         }
-                    }
-                    .padding(.horizontal, GONESpacing.large)
-                    .frame(height: 72)
-                    .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
-                    .overlay(alignment: .trailing) {
-                        Button { onRemove(student) } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .heavy))
-                                .foregroundStyle(Color.goneTextPrimary)
-                                .frame(width: 40, height: 40)
+                        .padding(.horizontal, GONESpacing.large)
+                        .allowsHitTesting(false)
+                        HStack {
+                            Spacer()
+                            Button { onRemove(student) } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 16, weight: .heavy))
+                                    .foregroundStyle(Color.goneTextPrimary)
+                                    .frame(width: 40, height: 40)
+                            }
+                            .accessibilityLabel("\(student.name) 발급 명단에서 삭제")
                         }
                         .padding(.trailing, 12)
-                        .accessibilityLabel("\(student.name) 발급 명단에서 삭제")
                     }
-                    .buttonStyle(.plain)
+                    .frame(height: 72)
                 }
-                Button("+ 발급 대상자 추가", action: onAddTap)
-                    .font(.system(size: 14, weight: .bold))
-                    .frame(width: 304)
-                    .frame(height: 48)
+                Button(action: onAddTap) {
+                    Text("+ 발급 대상자 추가")
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(width: 304, height: 48)
+                        .contentShape(Rectangle())
+                }
                     .frame(maxWidth: .infinity)
                     .foregroundStyle(Color.goneBrandPrimary)
                     .overlay { RoundedRectangle(cornerRadius: GONECornerRadius.button).stroke(Color.goneBrandPrimary, lineWidth: 1.5) }
@@ -586,10 +593,12 @@ private struct IssueEmptyState: View {
                 .foregroundStyle(Color.goneTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 8)
-            Button("+ 발급 대상자 추가", action: onAddTap)
-                .font(.headline)
-                .frame(width: 304)
-                .frame(height: 54)
+            Button(action: onAddTap) {
+                Text("+ 발급 대상자 추가")
+                    .font(.headline)
+                    .frame(width: 304, height: 54)
+                    .contentShape(Rectangle())
+            }
                 .foregroundStyle(Color.goneBrandPrimary)
                 .overlay {
                     RoundedRectangle(cornerRadius: GONECornerRadius.button)
