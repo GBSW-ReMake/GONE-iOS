@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct NotificationView: View {
-    @StateObject private var viewModel: NotificationViewModel
+    @ObservedObject private var viewModel: NotificationViewModel
     @Environment(\.dismiss) private var dismiss
 
     init(viewModel: NotificationViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
     var body: some View {

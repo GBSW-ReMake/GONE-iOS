@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
     private let role: AccountRole
+    private let unreadNotificationCount: Int
     private let labReservation: LabReservation?
     private let outings: [OutingRequest]
     private let schoolCampingReservation: SchoolCampingReservation?
@@ -14,6 +15,7 @@ struct HomeView: View {
     init(
         viewModel: HomeViewModel,
         role: AccountRole = .student,
+        unreadNotificationCount: Int = 0,
         labReservation: LabReservation? = nil,
         outings: [OutingRequest] = [],
         schoolCampingReservation: SchoolCampingReservation? = nil,
@@ -24,6 +26,7 @@ struct HomeView: View {
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.role = role
+        self.unreadNotificationCount = unreadNotificationCount
         self.labReservation = labReservation
         self.outings = outings
         self.schoolCampingReservation = schoolCampingReservation
@@ -91,13 +94,25 @@ struct HomeView: View {
                 .accessibilityLabel("GONE")
             Spacer()
             Button(action: onNotificationTap) {
-                Image(systemName: "bell")
-                    .font(.title3.weight(.medium))
-                    .foregroundStyle(Color.goneTextPrimary)
-                    .frame(width: 44, height: 44)
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.title2.weight(.medium))
+                        .foregroundStyle(Color.goneTextPrimary)
+                        .frame(width: 48, height: 48)
+
+                    if unreadNotificationCount > 0 {
+                        Text(unreadNotificationCount > 99 ? "99+" : "\(unreadNotificationCount)")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(minWidth: 18, minHeight: 18)
+                            .padding(.horizontal, unreadNotificationCount > 9 ? 3 : 0)
+                            .background(Color.red, in: Capsule())
+                            .offset(x: 2, y: -2)
+                    }
+                }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("알림")
+            .accessibilityLabel(unreadNotificationCount > 0 ? "알림, 읽지 않은 알림 \(unreadNotificationCount)개" : "알림")
             .accessibilityHint("새로운 알림을 확인합니다.")
         }
     }

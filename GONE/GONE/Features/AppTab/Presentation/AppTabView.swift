@@ -8,6 +8,7 @@ struct AppTabView: View {
     let role: AccountRole
     @State private var selection: AppTab = .home
     @State private var isNotificationPresented = false
+    @StateObject private var notificationViewModel: NotificationViewModel
     @StateObject private var labReservationViewModel: LabReservationViewModel
     @StateObject private var outingViewModel: OutingViewModel
     @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
@@ -29,6 +30,13 @@ struct AppTabView: View {
                 fetchOverview: FetchSettingsOverviewUseCase(repository: MockSettingsRepository())
             )
         )
+        _notificationViewModel = StateObject(
+            wrappedValue: NotificationViewModel(
+                role: role,
+                fetchNotifications: FetchNotificationsUseCase(repository: MockNotificationRepository()),
+                markAllNotificationsRead: MarkAllNotificationsReadUseCase(repository: MockNotificationRepository())
+            )
+        )
     }
 
     var body: some View {
@@ -37,6 +45,7 @@ struct AppTabView: View {
                 HomeView(
                     viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
                     role: role,
+                    unreadNotificationCount: notificationViewModel.unreadCount,
                     labReservation: labReservationViewModel.reservation,
                     outings: outingViewModel.outings,
                     schoolCampingReservation: schoolCampingViewModel.reservation,
@@ -47,11 +56,7 @@ struct AppTabView: View {
                 )
                 .navigationDestination(isPresented: $isNotificationPresented) {
                     NotificationView(
-                        viewModel: NotificationViewModel(
-                            role: role,
-                            fetchNotifications: FetchNotificationsUseCase(repository: MockNotificationRepository()),
-                            markAllNotificationsRead: MarkAllNotificationsReadUseCase(repository: MockNotificationRepository())
-                        )
+                        viewModel: notificationViewModel
                     )
                 }
             }
@@ -85,7 +90,8 @@ struct AppTabView: View {
             async let labLoad: Void = labReservationViewModel.load()
             async let outingLoad: Void = outingViewModel.load()
             async let schoolCampingLoad: Void = schoolCampingViewModel.load()
-            _ = await (labLoad, outingLoad, schoolCampingLoad)
+            async let notificationLoad: Void = notificationViewModel.load()
+            _ = await (labLoad, outingLoad, schoolCampingLoad, notificationLoad)
         }
     }
 
