@@ -108,7 +108,7 @@ struct PointSystemView: View {
             }
         }
         .padding(4)
-        .background(Color(red: 235 / 255, green: 236 / 255, blue: 238 / 255), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.goneSegmentBackground, in: RoundedRectangle(cornerRadius: 16))
         .accessibilityLabel("상벌점 메뉴")
     }
 

@@ -62,7 +62,7 @@ struct TeacherLabOverviewView: View {
                     }
                 }
                 .padding(4)
-                .background(Color.goneSurfaceDisabled, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.goneSegmentBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("층 선택")
 
