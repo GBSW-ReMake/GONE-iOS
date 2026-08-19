@@ -96,18 +96,15 @@ struct HomeView: View {
             Button(action: onNotificationTap) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
-                        .font(.title2.weight(.medium))
+                        .font(.title.weight(.medium))
                         .foregroundStyle(Color.goneTextPrimary)
-                        .frame(width: 48, height: 48)
+                        .frame(width: 52, height: 52)
 
                     if unreadNotificationCount > 0 {
-                        Text(unreadNotificationCount > 99 ? "99+" : "\(unreadNotificationCount)")
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(minWidth: 18, minHeight: 18)
-                            .padding(.horizontal, unreadNotificationCount > 9 ? 3 : 0)
-                            .background(Color.red, in: Capsule())
-                            .offset(x: 2, y: -2)
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 10, height: 10)
+                            .offset(x: 1, y: 1)
                     }
                 }
             }
