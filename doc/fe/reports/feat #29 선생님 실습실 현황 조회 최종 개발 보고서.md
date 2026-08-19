@@ -3,9 +3,9 @@
 > **작성일**: 2026-08-19
 > **작업 번호**: #29
 > **관련 이슈**: [#29](https://github.com/GBSW-ReMake/GONE-iOS/issues/29)
-> **PR**: [#30](https://github.com/GBSW-ReMake/GONE-iOS/pull/30)
+> **PR**: 생성 전 (이전 PR #30은 충돌/검토 문제로 종료)
 > **브랜치**: `feat/29-teacher-lab-overview`
-> **상태**: 실기기 테스트 전 · PR 생성 완료
+> **상태**: 실기기 테스트 전 · 개발자 검토 대기
 
 ---
 
