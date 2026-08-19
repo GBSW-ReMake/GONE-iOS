@@ -39,9 +39,9 @@
 | Swift 문법 파싱 | ✅ 통과 |
 | JSON Asset Catalog 검증 | ✅ 통과 |
 | whitespace 오류 검사 | ✅ 통과 |
-| 단위 테스트 실행 | ⚠️ Xcode 미설치로 실행 불가 |
-| Debug 빌드 | ⚠️ `xcodebuild` 실행 불가 (CommandLineTools만 활성화) |
-| 실제 화면/접근성 | ⚠️ 시뮬레이터 미실행, 코드 기준 점검 완료 |
+| 단위 테스트 실행 | ⚠️ Xcode 지정 실행 시 CoreSimulatorService 연결 실패로 완료 불가 |
+| Debug 빌드 | ⚠️ `xcodebuild`가 시뮬레이터 런타임을 발견하지 못해 완료 불가 |
+| 실제 화면/접근성 | ⚠️ 시뮬레이터 서비스 오류로 미실행, 코드 기준 점검 완료 |
 
 ## 알려진 제한사항
 
