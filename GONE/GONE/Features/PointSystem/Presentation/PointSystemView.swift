@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct PointSystemView: View {
     private enum Section: String, CaseIterable, Identifiable, Hashable {
         case issue = "점수발급"
@@ -184,10 +185,11 @@ private struct PointIssueFormView: View {
 
     var body: some View {
         NavigationStack {
-            if didSucceed {
-                PointIssueCompletionView(students: issuedStudents, draft: draft) { dismiss() }
-            } else {
-                Form {
+            Group {
+                if didSucceed {
+                    PointIssueCompletionView(students: issuedStudents, draft: draft) { dismiss() }
+                } else {
+                    Form {
                 Section("발급 대상") {
                     ForEach(viewModel.selectedStudents) { student in
                         HStack {
@@ -221,7 +223,8 @@ private struct PointIssueFormView: View {
                     .frame(maxWidth: .infinity)
                     .disabled(isIssuing || draft.item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-            }
+                    }
+                }
             }
             .navigationTitle("상벌점 폼")
             .toolbar {
