@@ -33,7 +33,7 @@ struct TeacherLabOverviewView: View {
 
     private func overviewContent(_ rooms: [TeacherLabRoomStatus]) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: GONESpacing.xLarge) {
+            VStack(alignment: .leading, spacing: GONESpacing.section) {
                 VStack(alignment: .leading, spacing: GONESpacing.small) {
                     Text("실습실 대여")
                         .font(.subheadline)
@@ -93,6 +93,7 @@ struct TeacherLabOverviewView: View {
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("teacherLabOverview.scrollView")
         .onChange(of: viewModel.selectedDate) { _, _ in
@@ -201,7 +202,7 @@ private struct TeacherLabBookingDetailView: View {
     }
 
     private func detailSection(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: GONESpacing.small) {
+        VStack(alignment: .leading, spacing: GONESpacing.medium) {
             Text(title)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(Color.goneTextPrimary)
@@ -210,6 +211,7 @@ private struct TeacherLabBookingDetailView: View {
                 .foregroundStyle(Color.goneTextPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var dateTitle: String {
