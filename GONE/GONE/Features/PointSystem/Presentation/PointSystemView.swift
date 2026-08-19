@@ -88,7 +88,7 @@ struct PointSystemView: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(Color.goneTextSecondary)
             Text("상벌점 점수 발급")
-                .font(.largeTitle.weight(.bold))
+                .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(Color.goneTextPrimary)
         }
         .accessibilityElement(children: .combine)
@@ -284,7 +284,7 @@ private struct PointIssueFormView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.goneTextSecondary)
             Text("상벌점 점수 발급")
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(Color.goneTextPrimary)
         }
     }
@@ -514,7 +514,7 @@ private struct IssueEmptyState: View {
             Image("PointPlusIcon")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 112, height: 112)
+                .frame(width: 82, height: 82)
                 .accessibilityHidden(true)
                 .padding(.top, 44)
             Text("발급 대상자를 추가해 주세요")
