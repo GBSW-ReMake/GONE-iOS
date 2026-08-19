@@ -22,7 +22,7 @@ struct TeacherLabOverviewView: View {
                     }
                 }
             }
-            .background(Color.goneHomeBackground.ignoresSafeArea())
+            .background(Color.goneScreenBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
