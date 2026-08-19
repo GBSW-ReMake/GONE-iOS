@@ -96,9 +96,9 @@ struct HomeView: View {
             Button(action: onNotificationTap) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
-                        .font(.title.weight(.medium))
+                        .font(.title2.weight(.medium))
                         .foregroundStyle(Color.goneTextPrimary)
-                        .frame(width: 52, height: 52)
+                        .frame(width: 48, height: 48)
 
                     if unreadNotificationCount > 0 {
                         Circle()
