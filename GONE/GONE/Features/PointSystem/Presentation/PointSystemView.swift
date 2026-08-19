@@ -49,7 +49,6 @@ struct PointSystemView: View {
             .fullScreenCover(item: $editingStudent) { student in
                 PointIssueFormView(viewModel: viewModel, student: student) {
                     editingStudent = nil
-                    successMessage = "학생을 추가했습니다."
                 }
             }
             .alert("상벌점 발급 완료", isPresented: Binding(
@@ -189,7 +188,7 @@ private struct IssueBottomBar: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
                 .foregroundStyle(.white)
-                .background(isEnabled ? Color.goneBrandPrimary : Color(red: 174 / 255, green: 181 / 255, blue: 191 / 255), in: RoundedRectangle(cornerRadius: 16))
+                .background(isEnabled ? Color.goneBrandPrimary : Color(red: 204 / 255, green: 207 / 255, blue: 212 / 255), in: RoundedRectangle(cornerRadius: 16))
                 .disabled(!isEnabled)
         }
     }
@@ -252,7 +251,7 @@ private struct PointIssueFormView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                formHeader
+                formNavigationHeader
                     .padding(.top, 12)
                 successBanner
                     .padding(.top, 14)
@@ -287,6 +286,24 @@ private struct PointIssueFormView: View {
         }
     }
 
+    private var formNavigationHeader: some View {
+        ZStack {
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 25, weight: .medium))
+                        .foregroundStyle(Color.goneTextPrimary)
+                        .frame(width: 44, height: 44)
+                }
+                Spacer()
+            }
+            Text("상벌점 발급")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(Color.goneTextPrimary)
+        }
+        .frame(height: 44)
+    }
+
     private var successBanner: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
@@ -313,7 +330,7 @@ private struct PointIssueFormView: View {
             .accessibilityLabel("\(student.name) 삭제")
         }
         .padding(.horizontal, 22)
-        .frame(height: 60)
+        .frame(height: 56)
         .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
     }
 
