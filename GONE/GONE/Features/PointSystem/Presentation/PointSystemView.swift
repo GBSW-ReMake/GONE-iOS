@@ -15,7 +15,11 @@ struct PointSystemView: View {
     @State private var isShowingIssueForm = false
     @StateObject private var viewModel: PointSystemViewModel
 
-    init(viewModel: PointSystemViewModel = PointSystemViewModel(repository: MockPointRepository())) {
+    init() {
+        _viewModel = StateObject(wrappedValue: PointSystemViewModel(repository: MockPointRepository()))
+    }
+
+    init(viewModel: PointSystemViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
