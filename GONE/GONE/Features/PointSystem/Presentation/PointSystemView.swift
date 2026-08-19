@@ -157,6 +157,7 @@ private struct IssueContent: View {
                         .accessibilityLabel("\(student.name) 발급 명단에서 삭제")
                     }
                     .padding(.horizontal, GONESpacing.large)
+                    .frame(minHeight: 74)
                     .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
                 }
                 Button("+ 발급 대상자 추가", action: onAddTap)
