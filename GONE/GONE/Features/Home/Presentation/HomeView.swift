@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
+    private let role: AccountRole
     private let labReservation: LabReservation?
     private let outings: [OutingRequest]
     private let schoolCampingReservation: SchoolCampingReservation?
@@ -12,6 +13,7 @@ struct HomeView: View {
 
     init(
         viewModel: HomeViewModel,
+        role: AccountRole = .student,
         labReservation: LabReservation? = nil,
         outings: [OutingRequest] = [],
         schoolCampingReservation: SchoolCampingReservation? = nil,
@@ -21,6 +23,7 @@ struct HomeView: View {
         onNotificationTap: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        self.role = role
         self.labReservation = labReservation
         self.outings = outings
         self.schoolCampingReservation = schoolCampingReservation
@@ -55,7 +58,7 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 header()
-                ProfileSummaryCard(profile: dashboard.profile)
+                ProfileSummaryCard(profile: dashboard.profile, showsPointSummary: role == .student)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 AcademicScheduleSection(
                     schedules: dashboard.academicSchedules,
@@ -102,6 +105,7 @@ struct HomeView: View {
 
 private struct ProfileSummaryCard: View {
     let profile: StudentProfile
+    let showsPointSummary: Bool
 
     var body: some View {
         HomeCard {
@@ -113,6 +117,13 @@ private struct ProfileSummaryCard: View {
                     Text(profile.studentInfo)
                         .font(.caption)
                         .foregroundStyle(Color.goneTextSecondary)
+                }
+                if showsPointSummary {
+                    HStack(spacing: GONESpacing.medium) {
+                        pointColumn(title: "상점", value: profile.rewardPoints, color: Color.goneBrandPrimary)
+                        pointColumn(title: "벌점", value: profile.penaltyPoints, color: Color.gonePenalty)
+                        pointColumn(title: "현재 점수", value: profile.totalPoints, color: Color.goneTextPrimary)
+                    }
                 }
                 HStack(alignment: .center, spacing: GONESpacing.medium) {
                     Text("내 역할")
@@ -129,6 +140,20 @@ private struct ProfileSummaryCard: View {
                 }
             }
         }
+    }
+
+    private func pointColumn(title: String, value: Int, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: GONESpacing.small) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(Color.goneTextSecondary)
+            Text("\(value >= 0 ? "+" : "")\(value)")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) \(value)점")
     }
 
     private func roleForegroundColor(at index: Int) -> Color {

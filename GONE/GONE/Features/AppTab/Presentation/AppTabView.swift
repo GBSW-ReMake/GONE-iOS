@@ -36,6 +36,7 @@ struct AppTabView: View {
             NavigationStack {
                 HomeView(
                     viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
+                    role: role,
                     labReservation: labReservationViewModel.reservation,
                     outings: outingViewModel.outings,
                     schoolCampingReservation: schoolCampingViewModel.reservation,
