@@ -55,9 +55,7 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
                 header(for: dashboard.profile)
-                if role == .student {
-                    PointSummaryCard(profile: dashboard.profile)
-                }
+                PointSummaryCard(profile: dashboard.profile, showsPointSummary: role == .student)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 AcademicScheduleSection(
                     schedules: dashboard.academicSchedules,
@@ -100,6 +98,7 @@ struct HomeView: View {
 
 private struct PointSummaryCard: View {
     let profile: StudentProfile
+    let showsPointSummary: Bool
 
     var body: some View {
         HomeCard {
@@ -113,10 +112,12 @@ private struct PointSummaryCard: View {
                         .foregroundStyle(Color.goneTextSecondary)
                 }
 
-                HStack(spacing: GONESpacing.medium) {
-                    pointColumn(title: "상점", value: profile.rewardPoints, color: Color.goneBrandPrimary)
-                    pointColumn(title: "벌점", value: profile.penaltyPoints, color: Color.gonePenalty)
-                    pointColumn(title: "현재 점수", value: profile.totalPoints, color: Color.goneTextPrimary)
+                if showsPointSummary {
+                    HStack(spacing: GONESpacing.medium) {
+                        pointColumn(title: "상점", value: profile.rewardPoints, color: Color.goneBrandPrimary)
+                        pointColumn(title: "벌점", value: profile.penaltyPoints, color: Color.gonePenalty)
+                        pointColumn(title: "현재 점수", value: profile.totalPoints, color: Color.goneTextPrimary)
+                    }
                 }
 
                 HStack(alignment: .center, spacing: GONESpacing.medium) {
@@ -137,7 +138,7 @@ private struct PointSummaryCard: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("상벌점 현황")
+        .accessibilityLabel(showsPointSummary ? "상벌점 현황" : "내 정보")
     }
 
     private func pointColumn(title: String, value: Int, color: Color) -> some View {
