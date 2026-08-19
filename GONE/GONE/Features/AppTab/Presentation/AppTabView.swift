@@ -7,6 +7,7 @@ enum AppTab: Hashable {
 struct AppTabView: View {
     let role: AccountRole
     @State private var selection: AppTab = .home
+    @State private var isNotificationPresented = false
     @StateObject private var labReservationViewModel: LabReservationViewModel
     @StateObject private var outingViewModel: OutingViewModel
     @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
@@ -32,15 +33,27 @@ struct AppTabView: View {
 
     var body: some View {
         TabView(selection: animatedSelection) {
-            HomeView(
-                viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
-                labReservation: labReservationViewModel.reservation,
-                outings: outingViewModel.outings,
-                schoolCampingReservation: schoolCampingViewModel.reservation,
-                onLabRequestTap: { select(.lab) },
-                onOutingRequestTap: { select(.outing) },
-                onSchoolCampingRequestTap: { select(.schoolCamping) }
-            )
+            NavigationStack {
+                HomeView(
+                    viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
+                    labReservation: labReservationViewModel.reservation,
+                    outings: outingViewModel.outings,
+                    schoolCampingReservation: schoolCampingViewModel.reservation,
+                    onLabRequestTap: { select(.lab) },
+                    onOutingRequestTap: { select(.outing) },
+                    onSchoolCampingRequestTap: { select(.schoolCamping) },
+                    onNotificationTap: { isNotificationPresented = true }
+                )
+                .navigationDestination(isPresented: $isNotificationPresented) {
+                    NotificationView(
+                        viewModel: NotificationViewModel(
+                            role: role,
+                            fetchNotifications: FetchNotificationsUseCase(repository: MockNotificationRepository()),
+                            markAllNotificationsRead: MarkAllNotificationsReadUseCase(repository: MockNotificationRepository())
+                        )
+                    )
+                }
+            }
                 .tabItem { Label("홈", image: "HomeTabIcon") }
                 .tag(AppTab.home)
 

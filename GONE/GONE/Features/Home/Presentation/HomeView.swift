@@ -8,6 +8,7 @@ struct HomeView: View {
     private let onLabRequestTap: () -> Void
     private let onOutingRequestTap: () -> Void
     private let onSchoolCampingRequestTap: () -> Void
+    private let onNotificationTap: () -> Void
 
     init(
         viewModel: HomeViewModel,
@@ -16,7 +17,8 @@ struct HomeView: View {
         schoolCampingReservation: SchoolCampingReservation? = nil,
         onLabRequestTap: @escaping () -> Void = {},
         onOutingRequestTap: @escaping () -> Void = {},
-        onSchoolCampingRequestTap: @escaping () -> Void = {}
+        onSchoolCampingRequestTap: @escaping () -> Void = {},
+        onNotificationTap: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.labReservation = labReservation
@@ -25,6 +27,7 @@ struct HomeView: View {
         self.onLabRequestTap = onLabRequestTap
         self.onOutingRequestTap = onOutingRequestTap
         self.onSchoolCampingRequestTap = onSchoolCampingRequestTap
+        self.onNotificationTap = onNotificationTap
     }
 
     var body: some View {
@@ -51,7 +54,7 @@ struct HomeView: View {
     private func dashboardContent(_ dashboard: HomeDashboard) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: GONESpacing.xLarge) {
-                header(for: dashboard.profile)
+                header()
                 ProfileSummaryCard(profile: dashboard.profile)
                 TodayScheduleCard(schedule: dashboard.schedule, meals: dashboard.meals)
                 AcademicScheduleSection(
@@ -76,15 +79,23 @@ struct HomeView: View {
         .accessibilityIdentifier("home.scrollView")
     }
 
-    private func header(for profile: StudentProfile) -> some View {
-        VStack(alignment: .leading, spacing: GONESpacing.small) {
-            Text("7월 20일 월요일")
-                .font(.caption.weight(.semibold))
-                .tracking(1.2)
-                .foregroundStyle(Color.goneTextSecondary)
-            Text("안녕하세요, \(profile.name)님")
-                .font(.title2.weight(.bold))
-                .accessibilityLabel("안녕하세요, \(profile.name)님")
+    private func header() -> some View {
+        HStack {
+            Image("GONELogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 88, height: 24)
+                .accessibilityLabel("GONE")
+            Spacer()
+            Button(action: onNotificationTap) {
+                Image(systemName: "bell")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(Color.goneTextPrimary)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("알림")
+            .accessibilityHint("새로운 알림을 확인합니다.")
         }
     }
 }
@@ -166,9 +177,7 @@ private struct AcademicScheduleSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
             HStack(spacing: GONESpacing.small) {
-                Text("학사일정")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.goneTextPrimary)
+                SectionTitle(title: "학사일정", assetName: "SectionScheduleIllustration")
                 Text(monthTitle)
                     .font(.caption)
                     .foregroundStyle(Color.goneTextSecondary)
@@ -284,7 +293,7 @@ private struct SchedulePager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             HStack {
-                Text("오늘 시간표").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                SectionTitle(title: "오늘 시간표", assetName: "SectionScheduleIllustration")
                 Spacer()
                 Text("\(selectedPeriod + 1) / \(schedule.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
@@ -354,7 +363,7 @@ private struct MealPager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             HStack {
-                Text("오늘 급식").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                SectionTitle(title: "오늘 급식", assetName: "SectionMealIllustration")
                 Spacer()
                 Text("\(selectedMeal + 1) / \(meals.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
@@ -426,7 +435,7 @@ private struct RequestStatusSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
-            Text("신청현황").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+            SectionTitle(title: "신청현황", assetName: "SectionRequestIllustration")
             ForEach(requests) { request in
                 let displayRequest = requestForDisplay(request)
                 Button {
@@ -550,6 +559,24 @@ private struct HomeCard<Content: View>: View {
             .padding(GONESpacing.large)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 15))
+    }
+}
+
+private struct SectionTitle: View {
+    let title: String
+    let assetName: String
+
+    var body: some View {
+        HStack(spacing: GONESpacing.small) {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.goneTextPrimary)
+        }
     }
 }
 
