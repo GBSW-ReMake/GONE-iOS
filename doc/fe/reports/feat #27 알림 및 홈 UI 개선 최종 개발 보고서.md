@@ -1,0 +1,62 @@
+# 알림 및 홈 UI 개선 최종 개발 보고서
+
+> **완료일**: 2026-08-19
+> **작업 번호**: #27
+> **관련 이슈**: GitHub 연결 오류로 미생성 (로컬 이슈 문서 기록)
+> **PR**: 미생성
+> **브랜치**: `feat/27-notifications-home-ui`
+
+---
+
+## 구현 요약
+
+학생과 선생님이 역할에 맞는 알림을 확인할 수 있는 알림 화면을 추가하고, 홈 화면을 GONE 로고·알림 버튼·3D 섹션 이미지 중심으로 개선했다.
+
+## 구현된 기능
+
+- [x] 역할별 알림 Model / Repository / UseCase / ViewModel
+- [x] 학생 활동 알림과 선생님 학생 신청 알림 Mock 데이터
+- [x] 오늘·어제·최근 7일 알림 그룹
+- [x] 모두 읽음 상태 변경 및 빈/오류/로딩 상태
+- [x] 홈 헤더 GONE 로고 및 알림 화면 진입
+- [x] 시간표·급식·학사일정·신청현황 3D 이미지 적용
+- [x] 상점·벌점 알림 이미지 Asset Catalog 추가
+- [x] 알림 ViewModel 단위 테스트 추가
+- [ ] 실제 API/푸시 알림 연동 (API 미확정)
+
+## 계획서 대비 변경 사항
+
+| 항목 | 계획 | 실제 구현 | 사유 |
+|---|---|---|---|
+| GitHub 이슈 | GitHub 이슈 생성 | 로컬 이슈 문서 작성 | Connector와 `gh` 인증 모두 접근 오류 |
+| 벨 아이콘 | 제공 SVG 적용 | SF Symbols `bell` 사용 | 요청 경로의 `bell_icon.svg` 파일이 현재 파일시스템에 없음 |
+| 데이터 | API Repository | Mock Repository | API 명세 미확정 |
+
+## QA 결과
+
+| 확인 항목 | 결과 |
+|---|---|
+| Swift 문법 파싱 | ✅ 통과 |
+| JSON Asset Catalog 검증 | ✅ 통과 |
+| whitespace 오류 검사 | ✅ 통과 |
+| 단위 테스트 실행 | ⚠️ Xcode 미설치로 실행 불가 |
+| Debug 빌드 | ⚠️ `xcodebuild` 실행 불가 (CommandLineTools만 활성화) |
+| 실제 화면/접근성 | ⚠️ 시뮬레이터 미실행, 코드 기준 점검 완료 |
+
+## 알려진 제한사항
+
+- GitHub 이슈와 PR을 생성하려면 GitHub 인증을 갱신해야 한다.
+- `bell_icon.svg`가 현재 지정 경로에 없어 시스템 벨 아이콘으로 대체했다.
+- Mock 데이터는 API 연결 시 Repository 구현 교체가 필요하다.
+
+## 다음 단계
+
+- 개발자 환경에서 Xcode 빌드 및 시뮬레이터 QA
+- 실제 벨 SVG를 Asset Catalog에 추가
+- GitHub 이슈 번호 발급 후 문서·브랜치·커밋 메시지 동기화
+- API/푸시 수신 규격 확정 후 Remote Repository 구현
+
+---
+
+> **개발자 검토 의견**
+> 최종 승인: 재검토 필요 — Xcode 빌드 및 실제 화면 QA 후 승인
