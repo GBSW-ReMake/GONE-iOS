@@ -13,6 +13,7 @@ final class PointSystemViewModel: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var students: [PointStudent] = []
     @Published private(set) var selectedStudents: [PointStudent] = []
+    @Published private(set) var draftsByStudentID: [String: PointIssueDraft] = [:]
     @Published private(set) var records: [PointIssueRecord] = []
 
     private let repository: PointRepository
@@ -37,19 +38,38 @@ final class PointSystemViewModel: ObservableObject {
     func addStudent(_ student: PointStudent) {
         guard !selectedStudents.contains(student) else { return }
         selectedStudents.append(student)
+        draftsByStudentID[student.id] = PointIssueDraft()
     }
 
     func removeStudent(_ student: PointStudent) {
         selectedStudents.removeAll { $0.id == student.id }
+        draftsByStudentID[student.id] = nil
     }
 
     func clearSelection() {
         selectedStudents.removeAll()
+        draftsByStudentID.removeAll()
+    }
+
+    func draft(for student: PointStudent) -> PointIssueDraft {
+        draftsByStudentID[student.id] ?? PointIssueDraft()
+    }
+
+    func saveDraft(_ draft: PointIssueDraft, for student: PointStudent) {
+        if !selectedStudents.contains(student) { addStudent(student) }
+        draftsByStudentID[student.id] = draft
     }
 
     func issue(draft: PointIssueDraft) async -> Bool {
         guard !selectedStudents.isEmpty, draft.points > 0, !draft.item.isEmpty else { return false }
-        let newRecords = selectedStudents.map { student in
+        selectedStudents.forEach { draftsByStudentID[$0.id] = draft }
+        return await issueAll()
+    }
+
+    func issueAll() async -> Bool {
+        guard !selectedStudents.isEmpty else { return false }
+        let newRecords = selectedStudents.compactMap { student -> PointIssueRecord? in
+            guard let draft = draftsByStudentID[student.id], draft.points > 0, !draft.item.isEmpty else { return nil }
             PointIssueRecord(
                 id: UUID().uuidString,
                 student: student,
@@ -60,9 +80,11 @@ final class PointSystemViewModel: ObservableObject {
                 issuedAt: .now
             )
         }
+        guard newRecords.count == selectedStudents.count else { return false }
         do {
             try await repository.issue(records: newRecords)
             records.insert(contentsOf: newRecords.reversed(), at: 0)
+            clearSelection()
             return true
         } catch {
             return false

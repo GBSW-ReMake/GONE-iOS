@@ -12,7 +12,7 @@ struct PointSystemView: View {
 
     @State private var selectedSection: Section = .issue
     @State private var isShowingStudentSearch = false
-    @State private var isShowingIssueForm = false
+    @State private var editingStudent: PointStudent?
     @State private var successMessage: String?
     @StateObject private var viewModel: PointSystemViewModel
 
@@ -39,16 +39,16 @@ struct PointSystemView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await viewModel.load() }
             .sheet(isPresented: $isShowingStudentSearch) {
-                StudentSearchView(viewModel: viewModel) { _ in
+                StudentSearchView(viewModel: viewModel) { student in
                     isShowingStudentSearch = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                        isShowingIssueForm = true
+                        editingStudent = student
                     }
                 }
             }
-            .fullScreenCover(isPresented: $isShowingIssueForm) {
-                PointIssueFormView(viewModel: viewModel) {
-                    isShowingIssueForm = false
+            .fullScreenCover(item: $editingStudent) { student in
+                PointIssueFormView(viewModel: viewModel, student: student) {
+                    editingStudent = nil
                     successMessage = "학생을 추가했습니다."
                 }
             }
@@ -59,6 +59,25 @@ struct PointSystemView: View {
                 Button("확인") { successMessage = nil }
             } message: {
                 Text(successMessage ?? "")
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if selectedSection == .issue {
+                    IssueBottomBar(
+                        isEnabled: !viewModel.selectedStudents.isEmpty,
+                        onClear: viewModel.clearSelection,
+                        onIssue: {
+                            Task {
+                                if await viewModel.issueAll() {
+                                    successMessage = "점수를 발급했습니다."
+                                }
+                            }
+                        }
+                    )
+                    .padding(.horizontal, 24)
+                    .padding(.top, 14)
+                    .padding(.bottom, 18)
+                    .background(Color.goneScreenBackground)
+                }
             }
         }
     }
@@ -76,12 +95,21 @@ struct PointSystemView: View {
     }
 
     private var sectionPicker: some View {
-        Picker("상벌점 메뉴", selection: $selectedSection) {
+        HStack(spacing: 0) {
             ForEach(Section.allCases) { section in
-                Text(section.rawValue).tag(section)
+                Button { selectedSection = section } label: {
+                    Text(section.rawValue)
+                        .font(.system(size: 15, weight: selectedSection == section ? .bold : .medium))
+                        .foregroundStyle(selectedSection == section ? Color.goneBrandPrimary : Color.goneTextSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(selectedSection == section ? Color.white : .clear, in: RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: selectedSection == section ? .black.opacity(0.08) : .clear, radius: 3, y: 1)
+                }
             }
         }
-        .pickerStyle(.segmented)
+        .padding(4)
+        .background(Color(red: 235 / 255, green: 236 / 255, blue: 238 / 255), in: RoundedRectangle(cornerRadius: 16))
         .accessibilityLabel("상벌점 메뉴")
     }
 
@@ -92,9 +120,7 @@ struct PointSystemView: View {
             IssueContent(
                 selectedStudents: viewModel.selectedStudents,
                 onAddTap: { isShowingStudentSearch = true },
-                onRemove: viewModel.removeStudent,
-                onIssueTap: { isShowingIssueForm = true },
-                onClear: viewModel.clearSelection
+                onRemove: viewModel.removeStudent
             )
         case .history:
             HistoryContent(records: viewModel.records)
@@ -108,8 +134,6 @@ private struct IssueContent: View {
     let selectedStudents: [PointStudent]
     let onAddTap: () -> Void
     let onRemove: (PointStudent) -> Void
-    let onIssueTap: () -> Void
-    let onClear: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.large) {
@@ -137,24 +161,36 @@ private struct IssueContent: View {
                     .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
                 }
                 Button("+ 발급 대상자 추가", action: onAddTap)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 304)
                     .frame(height: 48)
+                    .frame(maxWidth: .infinity)
                     .foregroundStyle(Color.goneBrandPrimary)
                     .overlay { RoundedRectangle(cornerRadius: GONECornerRadius.button).stroke(Color.goneBrandPrimary) }
             }
+        }
+        .padding(.bottom, 28)
+    }
+}
 
-            HStack(spacing: GONESpacing.medium) {
-                Button("전체 삭제", role: .destructive, action: onClear)
-                    .frame(maxWidth: 120)
-                    .frame(height: 52)
-                    .overlay { RoundedRectangle(cornerRadius: GONECornerRadius.button).stroke(Color.goneStatusError) }
-                Button("점수 발급", action: onIssueTap)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .foregroundStyle(.white)
-                    .background(selectedStudents.isEmpty ? Color.goneStatusWaiting : Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
-                    .disabled(selectedStudents.isEmpty)
-            }
+private struct IssueBottomBar: View {
+    let isEnabled: Bool
+    let onClear: () -> Void
+    let onIssue: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button("전체 삭제", role: .destructive, action: onClear)
+                .font(.system(size: 15, weight: .bold))
+                .frame(width: 112, height: 56)
+                .foregroundStyle(Color.goneStatusError)
+                .overlay { RoundedRectangle(cornerRadius: 16).stroke(Color.goneStatusError, lineWidth: 1.5) }
+            Button("점수 발급", action: onIssue)
+                .font(.system(size: 16, weight: .bold))
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .foregroundStyle(.white)
+                .background(isEnabled ? Color.goneBrandPrimary : Color(red: 174 / 255, green: 181 / 255, blue: 191 / 255), in: RoundedRectangle(cornerRadius: 16))
+                .disabled(!isEnabled)
         }
     }
 }
@@ -202,9 +238,16 @@ private struct StudentSearchView: View {
 private struct PointIssueFormView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: PointSystemViewModel
-    let onIssued: () -> Void
-    @State private var draft = PointIssueDraft()
-    @State private var isIssuing = false
+    let student: PointStudent
+    let onSaved: () -> Void
+    @State private var draft: PointIssueDraft
+
+    init(viewModel: PointSystemViewModel, student: PointStudent, onSaved: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.student = student
+        self.onSaved = onSaved
+        _draft = State(initialValue: viewModel.draft(for: student))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -250,7 +293,7 @@ private struct PointIssueFormView: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
                 .font(.system(size: 15, weight: .bold))
-            Text("\(viewModel.selectedStudents.first?.name ?? "학생") 학생을 추가했습니다.")
+            Text("\(student.name) 학생을 추가했습니다.")
                 .font(.system(size: 15, weight: .medium))
         }
         .foregroundStyle(Color(red: 52 / 255, green: 199 / 255, blue: 123 / 255))
@@ -262,16 +305,14 @@ private struct PointIssueFormView: View {
 
     private var studentCard: some View {
         HStack {
-            if let student = viewModel.selectedStudents.first {
-                Text(student.name).font(.system(size: 20, weight: .bold))
-                Text(student.studentInfo).font(.system(size: 13)).foregroundStyle(Color.goneTextSecondary)
-                Spacer()
-                Button { viewModel.removeStudent(student); dismiss() } label: {
-                    Image(systemName: "xmark").font(.system(size: 17, weight: .bold)).foregroundStyle(.black)
-                }
-                .frame(width: 44, height: 44)
-                .accessibilityLabel("\(student.name) 삭제")
+            Text(student.name).font(.system(size: 20, weight: .bold))
+            Text(student.studentInfo).font(.system(size: 13)).foregroundStyle(Color.goneTextSecondary)
+            Spacer()
+            Button { viewModel.removeStudent(student); dismiss() } label: {
+                Image(systemName: "xmark").font(.system(size: 17, weight: .bold)).foregroundStyle(.black)
             }
+            .frame(width: 44, height: 44)
+            .accessibilityLabel("\(student.name) 삭제")
         }
         .padding(.horizontal, 22)
         .frame(height: 80)
@@ -340,20 +381,15 @@ private struct PointIssueFormView: View {
             .frame(width: 145, height: 56)
             .foregroundStyle(Color.goneStatusError)
             .overlay { RoundedRectangle(cornerRadius: 14).stroke(Color.goneStatusError, lineWidth: 1.5) }
-            Button(isIssuing ? "발급 중..." : "명단 추가하기") {
-                isIssuing = true
-                Task {
-                    let didIssue = await viewModel.issue(draft: draft)
-                    isIssuing = false
-                    if didIssue { onIssued() }
-                }
+            Button("명단 추가하기") {
+                viewModel.saveDraft(draft, for: student)
+                onSaved()
             }
             .font(.system(size: 17, weight: .bold))
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .foregroundStyle(.white)
             .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
-            .disabled(isIssuing)
         }
     }
 }
@@ -474,33 +510,34 @@ private struct IssueEmptyState: View {
     var onAddTap: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: GONESpacing.large) {
+        VStack(spacing: 0) {
             Image("PointPlusIcon")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 88, height: 88)
+                .frame(width: 112, height: 112)
                 .accessibilityHidden(true)
-            VStack(spacing: GONESpacing.small) {
-                Text("발급 대상자를 추가해 주세요")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.goneTextPrimary)
-                Text("학생을 선택한 뒤 항목과 점수를 지정합니다.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.goneTextSecondary)
-                    .multilineTextAlignment(.center)
-            }
+                .padding(.top, 44)
+            Text("발급 대상자를 추가해 주세요")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(Color.goneTextPrimary)
+                .padding(.top, 26)
+            Text("학생을 선택한 뒤 항목과 점수를 지정합니다.")
+                .font(.subheadline)
+                .foregroundStyle(Color.goneTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 8)
             Button("+ 발급 대상자 추가", action: onAddTap)
                 .font(.headline)
-                .frame(maxWidth: .infinity)
+                .frame(width: 304)
                 .frame(height: 54)
                 .foregroundStyle(Color.goneBrandPrimary)
                 .overlay {
                     RoundedRectangle(cornerRadius: GONECornerRadius.button)
                         .stroke(Color.goneBrandPrimary, lineWidth: 2)
                 }
+                .padding(.top, 28)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 72)
         .accessibilityElement(children: .combine)
     }
 }
