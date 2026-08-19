@@ -60,7 +60,7 @@ struct NotificationView: View {
                 ForEach(AppNotification.DaySection.allCases) { section in
                     let items = notifications.filter { $0.daySection == section }
                     if !items.isEmpty {
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 21) {
                             Text(section.rawValue)
                                 .font(.headline.weight(.bold))
                                 .foregroundStyle(Color.goneTextPrimary)
@@ -91,18 +91,19 @@ private struct NotificationRow: View {
             Image(notification.kind.illustrationAssetName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 48, height: 48)
+                .frame(width: 38, height: 38)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(notification.title)
-                    .font(.subheadline.weight(.bold))
+                    .font(.footnote.weight(.bold))
                     .foregroundStyle(Color.goneTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(notification.message)
-                    .font(.footnote)
+                    .font(.caption)
                     .foregroundStyle(Color.goneTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .layoutPriority(1)
             Spacer(minLength: 4)
             Text(notification.relativeTime)
                 .font(.caption)
