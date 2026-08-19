@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
+    private let role: AccountRole
     private let labReservation: LabReservation?
     private let outings: [OutingRequest]
     private let schoolCampingReservation: SchoolCampingReservation?
@@ -11,6 +12,7 @@ struct HomeView: View {
 
     init(
         viewModel: HomeViewModel,
+        role: AccountRole = .student,
         labReservation: LabReservation? = nil,
         outings: [OutingRequest] = [],
         schoolCampingReservation: SchoolCampingReservation? = nil,
@@ -19,6 +21,7 @@ struct HomeView: View {
         onSchoolCampingRequestTap: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        self.role = role
         self.labReservation = labReservation
         self.outings = outings
         self.schoolCampingReservation = schoolCampingReservation
@@ -60,7 +63,7 @@ struct HomeView: View {
                     onMoveMonth: viewModel.moveAcademicMonth
                 )
                 RequestStatusSection(
-                    requests: dashboard.requests,
+                    requests: visibleRequests(from: dashboard.requests),
                     labReservation: labReservation,
                     outings: outings,
                     schoolCampingReservation: schoolCampingReservation,
@@ -74,6 +77,10 @@ struct HomeView: View {
         }
         .background(Color.goneHomeBackground.ignoresSafeArea())
         .accessibilityIdentifier("home.scrollView")
+    }
+
+    private func visibleRequests(from requests: [DashboardRequest]) -> [DashboardRequest] {
+        role == .teacher ? requests.filter { $0.kind != .schoolCamping } : requests
     }
 
     private func header(for profile: StudentProfile) -> some View {
