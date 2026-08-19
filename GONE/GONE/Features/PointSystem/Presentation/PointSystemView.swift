@@ -563,12 +563,22 @@ private struct StatisticsContent: View {
     }
 
     private func statisticCard(title: String, value: Int, unit: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: GONESpacing.small) {
-            Text(title).font(.caption).foregroundStyle(Color.goneTextSecondary).lineLimit(1)
-            Text("\(value)\(unit)").font(.title3.weight(.bold)).foregroundStyle(color)
+        VStack(alignment: .leading, spacing: 22) {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.goneTextSecondary)
+                .lineLimit(1)
+            HStack(alignment: .lastTextBaseline, spacing: 3) {
+                Text("\(value)")
+                    .font(.system(size: 40, weight: .bold))
+                Text(unit)
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .foregroundStyle(color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(GONESpacing.medium)
+        .padding(16)
+        .frame(height: 144, alignment: .topLeading)
         .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: GONECornerRadius.button))
     }
 }
