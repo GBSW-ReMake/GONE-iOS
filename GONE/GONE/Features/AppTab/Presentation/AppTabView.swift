@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppTab: Hashable {
-    case home, lab, outing, schoolCamping, settings
+    case home, lab, outing, schoolCamping, points, settings
 }
 
 struct AppTabView: View {
@@ -9,6 +9,7 @@ struct AppTabView: View {
     @State private var selection: AppTab = .home
     @State private var isNotificationPresented = false
     @StateObject private var notificationViewModel: NotificationViewModel
+    @StateObject private var teacherLabOverviewViewModel: TeacherLabOverviewViewModel
     @StateObject private var labReservationViewModel: LabReservationViewModel
     @StateObject private var outingViewModel: OutingViewModel
     @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
@@ -37,6 +38,11 @@ struct AppTabView: View {
                 markAllNotificationsRead: MarkAllNotificationsReadUseCase(repository: MockNotificationRepository())
             )
         )
+        _teacherLabOverviewViewModel = StateObject(
+            wrappedValue: TeacherLabOverviewViewModel(
+                fetchOverview: FetchTeacherLabOverviewUseCase(repository: MockTeacherLabOverviewRepository())
+            )
+        )
     }
 
     var body: some View {
@@ -63,7 +69,13 @@ struct AppTabView: View {
                 .tabItem { Label("홈", image: "HomeTabIcon") }
                 .tag(AppTab.home)
 
-            LabReservationView(viewModel: labReservationViewModel)
+            Group {
+                if role == .teacher {
+                    TeacherLabOverviewView(viewModel: teacherLabOverviewViewModel)
+                } else {
+                    LabReservationView(viewModel: labReservationViewModel)
+                }
+            }
                 .tabItem { Label("실습실", image: "LabTabIcon") }
                 .tag(AppTab.lab)
 

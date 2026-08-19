@@ -33,6 +33,7 @@ extension Color {
     static let goneTextSecondary = Color(red: 102 / 255, green: 112 / 255, blue: 133 / 255)
     static let goneTextTertiary = Color(red: 152 / 255, green: 160 / 255, blue: 170 / 255)
     static let goneBorderDefault = Color(red: 221 / 255, green: 225 / 255, blue: 230 / 255)
+    static let goneSegmentBackground = Color(red: 235 / 255, green: 236 / 255, blue: 238 / 255)
     static let goneSurfaceDisabled = Color(red: 241 / 255, green: 243 / 255, blue: 245 / 255)
     static let goneStatusError = Color(red: 255 / 255, green: 90 / 255, blue: 95 / 255)
     static let goneSurfacePrimary = Color.white
