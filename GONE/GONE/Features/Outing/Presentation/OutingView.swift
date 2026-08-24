@@ -799,6 +799,7 @@ private struct StudentOutingFlowPage: View {
 
     private var headerTitle: String {
         switch state {
+        case .approved: "승인 완료"
         case .waiting: "대기 상태"
         case .readyToLeave: "복귀 시간"
         case .outing: "남은 시간"
@@ -809,6 +810,7 @@ private struct StudentOutingFlowPage: View {
 
     private var headerValue: String {
         switch state {
+        case .approved: ""
         case .waiting: "10분 전"
         case .readyToLeave: "1시간 30분"
         case .outing: "30분"
@@ -819,6 +821,7 @@ private struct StudentOutingFlowPage: View {
 
     private var buttonTitle: String {
         switch state {
+        case .approved: "외출"
         case .waiting: "대기"
         case .readyToLeave: "외출"
         case .outing: "외출 중"
@@ -829,6 +832,7 @@ private struct StudentOutingFlowPage: View {
 
     private var message: String {
         switch state {
+        case .approved: "임시로 외출을 눌러 외출 준비를 시작해 주세요."
         case .waiting: "잠시 후 외출을 시작할 수 있습니다."
         case .readyToLeave: "외출을 시작하면 현재 위치와 이동 경로가\n선도부 학생에게 실시간으로 공유됩니다."
         case .outing: "현재 위치와 이동 경로를\n실시간으로 공유하고 있습니다."
@@ -839,6 +843,7 @@ private struct StudentOutingFlowPage: View {
 
     private var color: Color {
         switch state {
+        case .approved: Color.goneBrandPrimary
         case .waiting: Color.goneStatusWaiting
         case .readyToLeave: Color.goneBrandPrimary
         case .outing: Color.goneStatusOuting
