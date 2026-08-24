@@ -17,12 +17,21 @@ struct OutingTeacher: Identifiable, Equatable, Hashable {
 struct OutingStudent: Equatable, Hashable {
     let name: String
     let studentNumber: String
+    let profileImageName: String?
+
+    init(name: String, studentNumber: String, profileImageName: String? = nil) {
+        self.name = name
+        self.studentNumber = studentNumber
+        self.profileImageName = profileImageName
+    }
 }
 
 struct OutingRequest: Identifiable, Equatable, Hashable {
     enum Status: Equatable, Hashable {
         case pendingApproval
         case approved
+        case outing
+        case completed
         case rejected(reason: String)
     }
 
@@ -34,6 +43,27 @@ struct OutingRequest: Identifiable, Equatable, Hashable {
     let reason: String
     let teacher: OutingTeacher
     var status: Status
+}
+
+struct OutingCoordinate: Equatable, Hashable {
+    let latitude: Double
+    let longitude: Double
+}
+
+struct OutingRoute: Equatable, Hashable {
+    enum Status: Equatable, Hashable {
+        case outing
+        case arrived
+    }
+
+    let outingID: String
+    let points: [OutingCoordinate]
+    let startedAt: Date
+    let updatedAt: Date
+    let status: Status
+
+    var start: OutingCoordinate? { points.first }
+    var current: OutingCoordinate? { points.last }
 }
 
 struct OutingDraft: Equatable, Hashable {

@@ -17,11 +17,16 @@ struct AppTabView: View {
 
     init(role: AccountRole = .student) {
         self.role = role
+        let studentRoles = ["선도부", "방송부", "iOS 전공동아리"]
         _labReservationViewModel = StateObject(
             wrappedValue: LabReservationViewModel(repository: MockLabReservationRepository())
         )
         _outingViewModel = StateObject(
-            wrappedValue: OutingViewModel(role: role, repository: MockOutingRepository())
+            wrappedValue: OutingViewModel(
+                role: role,
+                repository: MockOutingRepository(),
+                hasLeaderRole: role == .student && studentRoles.contains("선도부")
+            )
         )
         _schoolCampingViewModel = StateObject(
             wrappedValue: SchoolCampingViewModel(repository: MockSchoolCampingRepository())

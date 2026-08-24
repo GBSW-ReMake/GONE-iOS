@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 struct OutingView: View {
     @ObservedObject var viewModel: OutingViewModel
@@ -9,6 +10,8 @@ struct OutingView: View {
             Group {
                 if viewModel.isLoading {
                     ProgressView("외출 정보를 불러오는 중")
+                } else if viewModel.canMonitorOutings {
+                    LeaderOutingListView(viewModel: viewModel)
                 } else if viewModel.role == .teacher {
                     TeacherOutingListView(viewModel: viewModel)
                 } else {
@@ -37,6 +40,167 @@ struct OutingView: View {
 
 private enum OutingRoute: Hashable {
     case requestForm
+}
+
+private struct LeaderOutingListView: View {
+    @ObservedObject var viewModel: OutingViewModel
+    @State private var selectedOuting: OutingRequest?
+
+    private var activeOutings: [OutingRequest] {
+        viewModel.outings.filter { outing in
+            if case .outing = outing.status { return true }
+            if case .completed = outing.status { return true }
+            return false
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: GONESpacing.large) {
+                VStack(alignment: .leading, spacing: GONESpacing.small) {
+                    Text("외출 학생 관리").font(.title2.bold())
+                    Text("외출 중인 학생의 위치와 이동 경로를 확인할 수 있어요.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.goneTextSecondary)
+                }
+
+                if activeOutings.isEmpty {
+                    ContentUnavailableView("외출 중인 학생이 없어요", systemImage: "location.slash", description: Text("학생이 외출을 시작하면 이곳에 표시됩니다."))
+                } else {
+                    ForEach(activeOutings) { outing in
+                        Button { selectedOuting = outing } label: {
+                            HStack(spacing: GONESpacing.medium) {
+                                ProfileMarker(student: outing.student, size: 44)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("\(outing.student.studentNumber) \(outing.student.name)")
+                                        .font(.headline.weight(.semibold))
+                                        .foregroundStyle(Color.goneTextPrimary)
+                                    Text(outing.status == .completed ? "도착 완료" : "외출 중 · 위치 공유 중")
+                                        .font(.caption)
+                                        .foregroundStyle(outing.status == .completed ? Color.goneTextSecondary : Color.goneBrandPrimary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(Color.goneTextTertiary)
+                            }
+                            .padding(GONESpacing.large)
+                            .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+            .padding(.vertical, GONESpacing.xLarge)
+        }
+        .navigationTitle("외출")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .navigationDestination(item: $selectedOuting) { outing in
+            OutingRouteDetailView(outing: outing, viewModel: viewModel)
+        }
+    }
+}
+
+private struct OutingRouteDetailView: View {
+    let outing: OutingRequest
+    @ObservedObject var viewModel: OutingViewModel
+    @State private var cameraPosition: MapCameraPosition = .automatic
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: GONESpacing.large) {
+                HStack(spacing: GONESpacing.medium) {
+                    ProfileMarker(student: outing.student, size: 52)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(outing.student.studentNumber) \(outing.student.name)")
+                            .font(.title3.bold())
+                        Text(viewModel.route?.status == .arrived ? "도착" : "외출 중")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(viewModel.route?.status == .arrived ? Color.goneTextSecondary : Color.goneBrandPrimary)
+                    }
+                    Spacer()
+                }
+
+                if let route = viewModel.route {
+                    routeMap(route)
+                    HStack {
+                        Label(route.status == .arrived ? "복귀 완료 · 도착" : "실시간 위치 공유 중", systemImage: route.status == .arrived ? "checkmark.circle.fill" : "location.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(route.status == .arrived ? Color.goneTextSecondary : Color.goneBrandPrimary)
+                        Spacer()
+                        if let updated = viewModel.lastLocationUpdate {
+                            Text(updated, style: .time).font(.caption).foregroundStyle(Color.goneTextTertiary)
+                        }
+                    }
+                } else {
+                    ProgressView("경로를 불러오는 중")
+                        .frame(maxWidth: .infinity, minHeight: 300)
+                }
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+            .padding(.vertical, GONESpacing.large)
+        }
+        .navigationTitle("외출")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .task { await viewModel.loadRoute(for: outing) }
+        .onDisappear { viewModel.stopLocationSharing() }
+    }
+
+    private func routeMap(_ route: OutingRoute) -> some View {
+        let coordinates = route.points.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        return Map(position: $cameraPosition) {
+            if coordinates.count > 1 {
+                MapPolyline(coordinates: coordinates)
+                    .stroke(Color.goneBrandPrimary, lineWidth: 5)
+            }
+            if let start = coordinates.first {
+                Annotation("출발", coordinate: start) {
+                    Image(systemName: "figure.walk.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.goneBrandPrimary)
+                        .background(.white, in: Circle())
+                }
+            }
+            if let current = coordinates.last {
+                Annotation(route.status == .arrived ? "도착" : "현재 위치", coordinate: current) {
+                    ProfileMarker(student: outing.student, size: 38)
+                }
+            }
+        }
+        .mapStyle(.standard)
+        .mapControls { MapCompass(); MapScaleView() }
+        .frame(height: 330)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityLabel("외출 이동 경로 지도")
+        .accessibilityHint("지도를 확대하거나 축소해서 이동 경로를 확인할 수 있습니다.")
+    }
+}
+
+private struct ProfileMarker: View {
+    let student: OutingStudent
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let imageName = student.profileImageName, UIImage(named: imageName) != nil {
+                Image(imageName).resizable().scaledToFill()
+            } else {
+                Text(String(student.name.prefix(1)))
+                    .font(.system(size: size * 0.4, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.goneBrandPrimary)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.white, lineWidth: 3))
+        .shadow(color: .black.opacity(0.16), radius: 4, y: 2)
+        .accessibilityLabel("\(student.name) 프로필 사진")
+    }
 }
 
 private struct StudentOutingListView: View {
@@ -634,6 +798,8 @@ private extension OutingRequest {
     switch status {
     case .pendingApproval: Text("승인 대기").foregroundStyle(Color.goneStatusOuting)
     case .approved: Text("승인됨").foregroundStyle(Color.goneBrandPrimary)
+    case .outing: Text("외출 중").foregroundStyle(Color.goneBrandPrimary)
+    case .completed: Text("도착").foregroundStyle(Color.goneTextSecondary)
     case .rejected(let reason): Text("거절 · \(reason)").foregroundStyle(Color.goneStatusError)
     }
 }
@@ -652,6 +818,18 @@ private extension OutingRequest {
             .foregroundStyle(Color.goneBrandPrimary)
             .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
+    case .outing:
+        Text("외출 중")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Color.goneBrandPrimary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
+    case .completed:
+        Text("도착")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Color.goneTextSecondary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(Color.goneSurfaceDisabled, in: Capsule())
     case .rejected:
         Text("거절됨")
             .font(.caption.weight(.bold))
