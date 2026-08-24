@@ -13,20 +13,78 @@ actor MockOutingRepository: OutingRepository {
         let today = calendar.startOfDay(for: Date())
         let departure = calendar.date(byAdding: .minute, value: 12 * 60, to: today) ?? today
         let returnTime = calendar.date(byAdding: .minute, value: 12 * 60 + 40, to: today) ?? today
-        outings = [OutingRequest(
-            id: "O-001",
-            student: OutingStudent(name: "박지민", studentNumber: "20314"),
-            date: today,
-            departureTime: departure,
-            returnTime: returnTime,
-            reason: "병원 진료",
-            teacher: teachers[0],
-            status: .pendingApproval
-        )]
+        outings = [
+            OutingRequest(
+                id: "O-001",
+                student: OutingStudent(name: "김은찬", studentNumber: "3206", profileImageName: "student-profile"),
+                date: today,
+                departureTime: departure,
+                returnTime: returnTime,
+                reason: "병원 진료",
+                teacher: teachers[0],
+                status: .approved
+            ),
+            OutingRequest(
+                id: "O-002",
+                student: OutingStudent(name: "박지민", studentNumber: "3201"),
+                date: today,
+                departureTime: departure,
+                returnTime: returnTime,
+                reason: "병원 진료",
+                teacher: teachers[0],
+                status: .outing
+            )
+        ]
     }
 
     func fetchOutings(for role: AccountRole) async throws -> [OutingRequest] {
         role == .teacher ? outings : outings.filter { $0.student.studentNumber == "3206" }
+    }
+
+    func fetchRoute(for outing: OutingRequest) async throws -> OutingRoute {
+        let calendar = Calendar.current
+        let startedAt = calendar.date(byAdding: .minute, value: -18, to: Date()) ?? Date()
+        let points = samplePoints
+        return OutingRoute(
+            outingID: outing.id,
+            points: points,
+            startedAt: startedAt,
+            updatedAt: Date(),
+            status: outing.status == .completed ? .arrived : .outing
+        )
+    }
+
+    func startOuting(_ outing: OutingRequest) async throws -> OutingRequest {
+        guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { throw OutingRepositoryError.notFound }
+        outings[index].status = .outing
+        return outings[index]
+    }
+
+    func completeReturn(_ outing: OutingRequest) async throws -> OutingRequest {
+        guard let index = outings.firstIndex(where: { $0.id == outing.id }) else { throw OutingRepositoryError.notFound }
+        outings[index].status = .completed
+        return outings[index]
+    }
+
+    func locationStream(for outing: OutingRequest) async -> AsyncStream<OutingRoute> {
+        let points = samplePoints
+        let startedAt = Calendar.current.date(byAdding: .minute, value: -18, to: Date()) ?? Date()
+        return AsyncStream { continuation in
+            // 실제 서비스에서는 Core Location + 서버 실시간 스트림이 이 자리를 대체한다.
+            // Mock에서는 위치를 임의로 이동시키지 않고 현재 서버에 저장된 경로만 전달한다.
+            continuation.yield(OutingRoute(outingID: outing.id, points: points, startedAt: startedAt, updatedAt: Date(), status: outing.status == .completed ? .arrived : .outing))
+            continuation.finish()
+        }
+    }
+
+    private var samplePoints: [OutingCoordinate] {
+        [
+            OutingCoordinate(latitude: 35.1579, longitude: 128.9825),
+            OutingCoordinate(latitude: 35.1584, longitude: 128.9831),
+            OutingCoordinate(latitude: 35.1591, longitude: 128.9840),
+            OutingCoordinate(latitude: 35.1595, longitude: 128.9850),
+            OutingCoordinate(latitude: 35.1602, longitude: 128.9857)
+        ]
     }
 
     func searchTeachers(keyword: String) async throws -> [OutingTeacher] {

@@ -4,22 +4,140 @@ import Foundation
 @MainActor
 final class OutingViewModel: ObservableObject {
     @Published private(set) var outings: [OutingRequest] = []
+    @Published private(set) var route: OutingRoute?
+    @Published private(set) var canMonitorOutings = false
+    @Published private(set) var isLocationSharing = false
+    @Published private(set) var lastLocationUpdate: Date?
+    @Published private(set) var locationSharingState: OutingLocationManager.SharingState = .idle
+    @Published private(set) var isNearSchool = false
     @Published private(set) var isLoading = true
     @Published var errorMessage: String?
 
     let role: AccountRole
     private let repository: OutingRepository
+    private let hasLeaderRole: Bool
+    private let locationManager = OutingLocationManager()
+    private var locationTask: Task<Void, Never>?
+    private var deviceLocationTask: Task<Void, Never>?
 
-    init(role: AccountRole, repository: OutingRepository) {
+    init(role: AccountRole, repository: OutingRepository, hasLeaderRole: Bool = false) {
         self.role = role
         self.repository = repository
+        self.hasLeaderRole = hasLeaderRole
+        canMonitorOutings = role == .student && hasLeaderRole
     }
 
     func load() async {
         isLoading = true
         defer { isLoading = false }
-        do { outings = try await repository.fetchOutings(for: role) }
+        do {
+            outings = try await repository.fetchOutings(for: role)
+        }
         catch { errorMessage = "외출 정보를 불러오지 못했어요." }
+    }
+
+    func loadRoute(for outing: OutingRequest) async {
+        do {
+            route = try await repository.fetchRoute(for: outing)
+            lastLocationUpdate = route?.updatedAt
+            if case .outing = outing.status {
+                startLocationSharing(for: outing)
+            }
+        } catch {
+            errorMessage = "외출 경로를 불러오지 못했어요."
+        }
+    }
+
+    func startLocationSharing(for outing: OutingRequest) {
+        locationTask?.cancel()
+        isLocationSharing = true
+        locationTask = Task { [weak self] in
+            guard let self else { return }
+            let stream = await repository.locationStream(for: outing)
+            for await nextRoute in stream {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.route = nextRoute
+                    self.lastLocationUpdate = nextRoute.updatedAt
+                }
+            }
+        }
+    }
+
+    func stopLocationSharing() {
+        locationTask?.cancel()
+        locationTask = nil
+        deviceLocationTask?.cancel()
+        deviceLocationTask = nil
+        isLocationSharing = false
+        isNearSchool = false
+        locationManager.stopSharing()
+        locationSharingState = locationManager.state
+    }
+
+    func startOuting(_ outing: OutingRequest) async -> Bool {
+        locationManager.requestPermissionAndStartSharing()
+        locationSharingState = locationManager.state
+        guard locationManager.state == .sharing else {
+            errorMessage = "외출하려면 위치 권한에서 ‘항상 허용’을 선택해 주세요."
+            return false
+        }
+        do {
+            let started = try await repository.startOuting(outing)
+            outings = outings.map { $0.id == started.id ? started : $0 }
+            let locationUpdates = locationManager.updates()
+            deviceLocationTask = Task { [weak self] in
+                for await coordinate in locationUpdates {
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        self?.appendLocation(coordinate)
+                        self?.isNearSchool = self?.locationManager.isNearSchool ?? false
+                    }
+                }
+            }
+            await loadRoute(for: started)
+            return true
+        } catch {
+            errorMessage = "외출 시작 처리에 실패했어요."
+            return false
+        }
+    }
+
+    func completeReturn(for outing: OutingRequest) async {
+        do {
+            let completed = try await repository.completeReturn(outing)
+            if let currentRoute = route {
+                route = OutingRoute(
+                    outingID: currentRoute.outingID,
+                    points: currentRoute.points,
+                    startedAt: currentRoute.startedAt,
+                    updatedAt: Date(),
+                    status: .arrived
+                )
+            }
+            outings = outings.map { $0.id == completed.id ? completed : $0 }
+            stopLocationSharing()
+        } catch {
+            errorMessage = "복귀 완료 처리에 실패했어요."
+        }
+    }
+
+    deinit {
+        locationTask?.cancel()
+        deviceLocationTask?.cancel()
+    }
+
+    private func appendLocation(_ coordinate: OutingCoordinate) {
+        guard let route else { return }
+        let updatedPoints = route.points + [coordinate]
+        self.route = OutingRoute(
+            outingID: route.outingID,
+            points: updatedPoints,
+            startedAt: route.startedAt,
+            updatedAt: Date(),
+            status: .outing
+        )
+        lastLocationUpdate = self.route?.updatedAt
     }
 
     func searchTeachers(_ keyword: String) async -> [OutingTeacher] {

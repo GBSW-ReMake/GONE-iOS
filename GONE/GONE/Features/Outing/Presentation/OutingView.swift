@@ -1,30 +1,62 @@
 import SwiftUI
+import MapKit
 
 struct OutingView: View {
     @ObservedObject var viewModel: OutingViewModel
-    @State private var navigationPath: [OutingRoute] = []
+    @State private var navigationPath: [OutingNavigationRoute] = []
+    @State private var showsLeaderMonitor: Bool
+
+    init(viewModel: OutingViewModel) {
+        self.viewModel = viewModel
+        _showsLeaderMonitor = State(initialValue: viewModel.canMonitorOutings)
+    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
                 if viewModel.isLoading {
                     ProgressView("외출 정보를 불러오는 중")
+                } else if viewModel.canMonitorOutings && showsLeaderMonitor {
+                    LeaderOutingListView(viewModel: viewModel) {
+                        viewModel.errorMessage = nil
+                        navigationPath.append(.requestForm)
+                    } showMyOutings: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showsLeaderMonitor = false
+                        }
+                    }
                 } else if viewModel.role == .teacher {
                     TeacherOutingListView(viewModel: viewModel)
                 } else {
                     StudentOutingListView(viewModel: viewModel) {
                         viewModel.errorMessage = nil
                         navigationPath.append(.requestForm)
+                    } showLeaderMonitor: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showsLeaderMonitor = true
+                        }
                     }
                 }
             }
             .background(Color.goneScreenBackground.ignoresSafeArea())
-            .navigationDestination(for: OutingRoute.self) { route in
+            .navigationDestination(for: OutingNavigationRoute.self) { route in
                 switch route {
                 case .requestForm:
                     OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
                         viewModel.submitPreview(draft)
                     }
+                }
+            }
+        }
+        .toolbar {
+            if viewModel.canMonitorOutings {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(showsLeaderMonitor ? "내 외출" : "선도부") {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showsLeaderMonitor.toggle()
+                        }
+                    }
+                    .font(.caption.weight(.semibold))
                 }
             }
         }
@@ -35,13 +67,217 @@ struct OutingView: View {
     }
 }
 
-private enum OutingRoute: Hashable {
+private enum OutingNavigationRoute: Hashable {
     case requestForm
+}
+
+private struct LeaderOutingListView: View {
+    @ObservedObject var viewModel: OutingViewModel
+    let apply: () -> Void
+    let showMyOutings: () -> Void
+    @State private var selectedOuting: OutingRequest?
+
+    private var activeOutings: [OutingRequest] {
+        viewModel.outings.filter { outing in
+            if case .outing = outing.status { return true }
+            if case .completed = outing.status { return true }
+            return false
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: GONESpacing.large) {
+                Text(dateText(Date()))
+                    .font(.footnote)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Text("외출 학생 관리")
+                    .font(.title.bold())
+                    .foregroundStyle(Color.goneTextPrimary)
+                Button("내 외출") {
+                    showMyOutings()
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.goneBrandPrimary)
+
+                if activeOutings.isEmpty {
+                    ContentUnavailableView("외출 중인 학생이 없어요", systemImage: "location.slash", description: Text("학생이 외출을 시작하면 이곳에 표시됩니다."))
+                } else {
+                    ForEach(activeOutings) { outing in
+                        Button { selectedOuting = outing } label: {
+                            VStack(alignment: .leading, spacing: GONESpacing.small) {
+                                statusBadge(outing.status)
+                                Text(dateText(Date()))
+                                    .font(.caption)
+                                    .foregroundStyle(Color.goneTextSecondary)
+                                Text("\(outing.student.studentNumber) \(outing.student.name)")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(Color.goneTextPrimary)
+                                Text("오후 12:30 ~ 오후 1:30")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.goneTextPrimary)
+                                Text(outing.reason)
+                                    .font(.caption)
+                                    .foregroundStyle(Color.goneTextSecondary)
+                                Text("담당: \(outing.teacher.name)")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.goneTextSecondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(GONESpacing.large)
+                            .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+            .padding(.vertical, GONESpacing.xLarge)
+        }
+        .navigationTitle("외출")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
+                .padding(.horizontal, GONESpacing.screenHorizontal)
+                .padding(.top, GONESpacing.small)
+                .padding(.bottom, GONESpacing.large)
+                .background(Color.goneScreenBackground)
+        }
+        .navigationDestination(item: $selectedOuting) { outing in
+            OutingRouteDetailView(outing: outing, viewModel: viewModel)
+        }
+    }
+
+    private func statusBadge(_ status: OutingRequest.Status) -> some View {
+        let isCompleted = status == .completed
+        return Text(isCompleted ? "복귀 완료" : "외출 중")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(isCompleted ? Color.goneBrandPrimary : Color.goneStatusOuting)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background((isCompleted ? Color.goneBrandPrimary : Color.goneStatusOuting).opacity(0.12), in: Capsule())
+    }
+}
+
+private struct OutingRouteDetailView: View {
+    let outing: OutingRequest
+    @ObservedObject var viewModel: OutingViewModel
+    @State private var cameraPosition: MapCameraPosition = .automatic
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: GONESpacing.large) {
+                detailStatusBadge
+                Text(dateText(Date()))
+                    .font(.subheadline)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Text("\(outing.student.studentNumber) \(outing.student.name)")
+                    .font(.title3.bold())
+                Text("오후 12:30 ~ 오후 1:30")
+                    .font(.headline)
+
+                if let route = viewModel.route {
+                    Text("이동 경로")
+                        .font(.headline.weight(.bold))
+                    routeMap(route)
+                    VStack(alignment: .leading, spacing: GONESpacing.small) {
+                        Text("복귀 알림 예정")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.goneTextSecondary)
+                        Text(route.status == .arrived
+                             ? "학생이 복귀 버튼을 눌러 경로 추적이 종료되었고 선도부에게 복귀 완료 알림이 전송되었습니다."
+                             : "학생이 복귀 버튼을 누르면 경로 추적이 종료되고 선도부에게 복귀 완료 알림이 전송됩니다.")
+                            .font(.caption)
+                            .foregroundStyle(Color.goneTextSecondary)
+                            .lineSpacing(5)
+                    }
+                    .padding(.top, GONESpacing.medium)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    ProgressView("경로를 불러오는 중")
+                        .frame(maxWidth: .infinity, minHeight: 300)
+                }
+            }
+            .padding(.horizontal, GONESpacing.screenHorizontal)
+            .padding(.vertical, GONESpacing.large)
+        }
+        .navigationTitle("외출")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.white.ignoresSafeArea())
+        .task { await viewModel.loadRoute(for: outing) }
+        .onDisappear { viewModel.stopLocationSharing() }
+    }
+
+    private var detailStatusBadge: some View {
+        let isArrived = viewModel.route?.status == .arrived
+        return Text(isArrived ? "복귀 완료" : "외출 중")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(isArrived ? Color.goneBrandPrimary : Color.goneStatusOuting)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background((isArrived ? Color.goneBrandPrimary : Color.goneStatusOuting).opacity(0.12), in: Capsule())
+    }
+
+    private func routeMap(_ route: OutingRoute) -> some View {
+        let coordinates = route.points.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        return Map(position: $cameraPosition) {
+            if coordinates.count > 1 {
+                MapPolyline(coordinates: coordinates)
+                    .stroke(Color.goneBrandPrimary, lineWidth: 5)
+            }
+            if let start = coordinates.first {
+                Annotation("출발", coordinate: start) {
+                    Image(systemName: "figure.walk.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.goneBrandPrimary)
+                        .background(.white, in: Circle())
+                }
+            }
+            if let current = coordinates.last {
+                Annotation(route.status == .arrived ? "도착" : "현재 위치", coordinate: current) {
+                    ProfileMarker(student: outing.student, size: 38)
+                }
+            }
+        }
+        .mapStyle(.standard)
+        .mapControls { MapCompass(); MapScaleView() }
+        .frame(height: 330)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityLabel("외출 이동 경로 지도")
+        .accessibilityHint("지도를 확대하거나 축소해서 이동 경로를 확인할 수 있습니다.")
+    }
+}
+
+private struct ProfileMarker: View {
+    let student: OutingStudent
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let imageName = student.profileImageName, UIImage(named: imageName) != nil {
+                Image(imageName).resizable().scaledToFill()
+            } else {
+                Text(String(student.name.prefix(1)))
+                    .font(.system(size: size * 0.4, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.goneBrandPrimary)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.white, lineWidth: 3))
+        .shadow(color: .black.opacity(0.16), radius: 4, y: 2)
+        .accessibilityLabel("\(student.name) 프로필 사진")
+    }
 }
 
 private struct StudentOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
     let apply: () -> Void
+    let showLeaderMonitor: () -> Void
     @State private var selectedOuting: OutingRequest?
 
     var body: some View {
@@ -52,6 +288,11 @@ private struct StudentOutingListView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: GONESpacing.large) {
                         Text("외출 신청").font(.title2.bold())
+                        if viewModel.canMonitorOutings {
+                            Button("선도부 관리", action: showLeaderMonitor)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.goneBrandPrimary)
+                        }
                         Text("이번 주 안에서만 신청할 수 있으며, 시간이 겹치지 않으면 여러 건을 신청할 수 있어요.")
                             .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
                         ForEach(viewModel.outings) { outing in
@@ -59,7 +300,6 @@ private struct StudentOutingListView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture { selectedOuting = outing }
                         }
-                        GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
                     }
                     .padding(.horizontal, GONESpacing.screenHorizontal)
                     .padding(.vertical, GONESpacing.xLarge)
@@ -68,11 +308,24 @@ private struct StudentOutingListView: View {
         }
         .navigationTitle(viewModel.outings.isEmpty ? "" : "외출")
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !viewModel.outings.isEmpty {
+                GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
+                    .padding(.horizontal, GONESpacing.screenHorizontal)
+                    .padding(.top, GONESpacing.small)
+                    .padding(.bottom, GONESpacing.large)
+                    .background(Color.goneScreenBackground)
+            }
+        }
         .navigationDestination(item: $selectedOuting) { outing in
             StudentOutingDetailView(
                 outing: outing,
                 searchTeachers: viewModel.searchTeachers,
-                update: viewModel.updatePreview
+                update: viewModel.updatePreview,
+                startOuting: { await viewModel.startOuting($0) },
+                completeReturn: { await viewModel.completeReturn(for: $0) },
+                locationSharingState: viewModel.locationSharingState,
+                isNearSchool: { viewModel.isNearSchool }
             )
         }
     }
@@ -309,16 +562,34 @@ private struct OutingRequestForm: View {
 
 private enum TimeSelectionMode: Equatable { case lunch, dinner, custom }
 
+private enum StudentOutingFlowState: Equatable {
+    case approved
+    case waiting
+    case readyToLeave
+    case outing
+    case returning
+    case completed
+}
+
 private struct StudentOutingDetailView: View {
     @State private var outing: OutingRequest
     let searchTeachers: (String) async -> [OutingTeacher]
     let update: (OutingRequest, OutingDraft) -> OutingRequest?
+    let startOuting: (OutingRequest) async -> Bool
+    let completeReturn: (OutingRequest) async -> Void
+    let locationSharingState: OutingLocationManager.SharingState
+    let isNearSchool: () -> Bool
     @State private var isEditing = false
+    @State private var isShowingFlowPage = false
 
-    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?) {
+    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState, isNearSchool: @escaping () -> Bool) {
         _outing = State(initialValue: outing)
         self.searchTeachers = searchTeachers
         self.update = update
+        self.startOuting = startOuting
+        self.completeReturn = completeReturn
+        self.locationSharingState = locationSharingState
+        self.isNearSchool = isNearSchool
     }
 
     var body: some View {
@@ -336,6 +607,19 @@ private struct StudentOutingDetailView: View {
                 detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                 detailRow("사유", outing.reason)
                 detailRow("지정 선생님", outing.teacher.name)
+                if case .approved = outing.status {
+                    Button("임시로 외출") {
+                        isShowingFlowPage = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.goneBrandPrimary)
+                } else if case .outing = outing.status {
+                    Button("외출 상태 보기") {
+                        isShowingFlowPage = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.goneBrandPrimary)
+                }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -362,12 +646,225 @@ private struct StudentOutingDetailView: View {
                 return true
             }
         }
+        .navigationDestination(isPresented: $isShowingFlowPage) {
+            StudentOutingFlowPage(
+                outing: outing,
+                initialState: outing.status == .outing ? .outing : .waiting,
+                startOuting: startOuting,
+                completeReturn: completeReturn,
+                locationSharingState: locationSharingState,
+                isNearSchool: isNearSchool
+            )
+        }
     }
 
     private func detailRow(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.footnote).foregroundStyle(Color.goneTextSecondary)
             Text(value).font(.body)
+        }
+    }
+
+    private var locationPermissionNotice: some View {
+        Text(locationSharingState == .denied
+             ? "위치 권한이 꺼져 있어 외출 중 위치를 공유할 수 없습니다. 설정에서 위치 권한을 허용해 주세요."
+             : "외출 시작 시 현재 위치가 선도부에게 공유됩니다. 복귀 완료를 누르면 위치 공유가 종료됩니다.")
+            .font(.caption)
+            .foregroundStyle(locationSharingState == .denied ? Color.goneStatusError : Color.goneTextSecondary)
+            .lineSpacing(4)
+    }
+
+    private func actionButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+}
+
+private struct StudentOutingFlowPage: View {
+    let outing: OutingRequest
+    let startOuting: (OutingRequest) async -> Bool
+    let completeReturn: (OutingRequest) async -> Void
+    let locationSharingState: OutingLocationManager.SharingState
+    let isNearSchool: () -> Bool
+    @State private var state: StudentOutingFlowState
+    @State private var isShowingLocationShareAlert = false
+    @State private var isCharging = false
+    @State private var hapticTimer: Timer?
+    @State private var hasReachedSchool = false
+
+    init(outing: OutingRequest, initialState: StudentOutingFlowState, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState, isNearSchool: @escaping () -> Bool) {
+        self.outing = outing
+        self.startOuting = startOuting
+        self.completeReturn = completeReturn
+        self.locationSharingState = locationSharingState
+        self.isNearSchool = isNearSchool
+        _state = State(initialValue: initialState)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            stateHeader
+            Spacer(minLength: 80)
+            chargingButton
+            Spacer(minLength: 80)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(Color.goneTextSecondary)
+                .multilineTextAlignment(.center)
+                .lineSpacing(6)
+            Spacer(minLength: 20)
+        }
+        .padding(.horizontal, GONESpacing.screenHorizontal)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .task {
+            guard state == .waiting else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            state = .readyToLeave
+        }
+        .task {
+            while !Task.isCancelled {
+                hasReachedSchool = isNearSchool()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        .alert("위치 공유가 필요해요", isPresented: $isShowingLocationShareAlert) {
+            Button("항상 허용하고 외출") {
+                Task {
+                    if await startOuting(outing) { state = .outing }
+                }
+            }
+            Button("취소", role: .cancel) { }
+        } message: {
+            Text("외출 중에는 선도부가 학생의 이동 경로를 확인할 수 있도록 위치를 항상 공유해야 합니다. 위치 권한에서 ‘항상 허용’을 선택해 주세요.")
+        }
+        .onDisappear { stopHaptics() }
+    }
+
+    private var stateHeader: some View {
+        VStack(spacing: GONESpacing.small) {
+            Text(headerTitle)
+                .font(.title.bold())
+                .foregroundStyle(Color.goneTextPrimary)
+            Text(headerValue)
+                .font(.system(size: 48, weight: .bold))
+                .foregroundStyle(color)
+        }
+    }
+
+    private var chargingButton: some View {
+        Text(buttonTitle)
+            .font(.title2.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(width: 160, height: 160)
+            .background(color, in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(isCharging ? 0.8 : 0), lineWidth: 5)
+                    .scaleEffect(isCharging ? 1.08 : 1)
+                    .animation(.easeInOut(duration: 0.18).repeatForever(autoreverses: true), value: isCharging)
+            }
+            .contentShape(Circle())
+            .onLongPressGesture(minimumDuration: 1.2, maximumDistance: 20, pressing: { pressing in
+                if pressing { startHaptics() } else { stopHaptics() }
+            }, perform: performAction)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("1.2초 동안 길게 눌러 실행합니다.")
+    }
+
+    private func performAction() {
+        stopHaptics()
+        switch state {
+        case .readyToLeave:
+            isShowingLocationShareAlert = true
+        case .outing:
+            guard hasReachedSchool else { return }
+            Task {
+                await completeReturn(outing)
+                state = .completed
+            }
+        default:
+            break
+        }
+    }
+
+    private func startHaptics() {
+        guard !isCharging else { return }
+        isCharging = true
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        hapticTimer = Timer.scheduledTimer(withTimeInterval: 0.22, repeats: true) { _ in
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
+        }
+    }
+
+    private func stopHaptics() {
+        hapticTimer?.invalidate()
+        hapticTimer = nil
+        isCharging = false
+    }
+
+    private var headerTitle: String {
+        switch state {
+        case .approved: "승인 완료"
+        case .waiting: "대기 상태"
+        case .readyToLeave: "복귀 시간"
+        case .outing: "남은 시간"
+        case .returning: "남은 시간"
+        case .completed: "복귀 완료"
+        }
+    }
+
+    private var headerValue: String {
+        switch state {
+        case .approved: ""
+        case .waiting: "10분 전"
+        case .readyToLeave: "1시간 30분"
+        case .outing: "30분"
+        case .returning: "5분"
+        case .completed: "도착"
+        }
+    }
+
+    private var buttonTitle: String {
+        switch state {
+        case .approved: "외출"
+        case .waiting: "대기"
+        case .readyToLeave: "외출"
+        case .outing: hasReachedSchool ? "복귀" : "외출 중"
+        case .returning: "복귀"
+        case .completed: "완료"
+        }
+    }
+
+    private var message: String {
+        switch state {
+        case .approved: "임시로 외출을 눌러 외출 준비를 시작해 주세요."
+        case .waiting: "잠시 후 외출을 시작할 수 있습니다."
+        case .readyToLeave: "외출을 시작하면 현재 위치와 이동 경로가\n선도부 학생에게 실시간으로 공유됩니다."
+        case .outing: hasReachedSchool
+            ? "학교 근처에 도착했습니다.\n복귀 버튼을 눌러 외출을 종료해 주세요."
+            : "현재 위치와 이동 경로를\n실시간으로 공유하고 있습니다."
+        case .returning: "복귀 후 버튼을 눌러\n외출을 종료해 주세요."
+        case .completed: "복귀가 완료되어 위치 공유가 종료되었습니다."
+        }
+    }
+
+    private var color: Color {
+        switch state {
+        case .approved: Color.goneBrandPrimary
+        case .waiting: Color.goneStatusWaiting
+        case .readyToLeave: Color.goneBrandPrimary
+        case .outing: hasReachedSchool ? Color.goneStatusReturn : Color.goneStatusOuting
+        case .returning: Color.goneStatusReturn
+        case .completed: Color.goneBrandPrimary
         }
     }
 }
@@ -634,6 +1131,8 @@ private extension OutingRequest {
     switch status {
     case .pendingApproval: Text("승인 대기").foregroundStyle(Color.goneStatusOuting)
     case .approved: Text("승인됨").foregroundStyle(Color.goneBrandPrimary)
+    case .outing: Text("외출 중").foregroundStyle(Color.goneBrandPrimary)
+    case .completed: Text("도착").foregroundStyle(Color.goneTextSecondary)
     case .rejected(let reason): Text("거절 · \(reason)").foregroundStyle(Color.goneStatusError)
     }
 }
@@ -652,6 +1151,18 @@ private extension OutingRequest {
             .foregroundStyle(Color.goneBrandPrimary)
             .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
+    case .outing:
+        Text("외출 중")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Color.goneBrandPrimary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(Color.goneBrandPrimary.opacity(0.12), in: Capsule())
+    case .completed:
+        Text("도착")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Color.goneTextSecondary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(Color.goneSurfaceDisabled, in: Capsule())
     case .rejected:
         Text("거절됨")
             .font(.caption.weight(.bold))
@@ -701,4 +1212,14 @@ private func dateText(_ date: Date) -> String {
 
 private func timeText(_ date: Date) -> String {
     let formatter = DateFormatter(); formatter.locale = Locale(identifier: "ko_KR"); formatter.dateFormat = "a h:mm"; return formatter.string(from: date)
+}
+
+#Preview("선도부 아닌 학생 외출") {
+    OutingView(
+        viewModel: OutingViewModel(
+            role: .student,
+            repository: MockOutingRepository(),
+            hasLeaderRole: false
+        )
+    )
 }
