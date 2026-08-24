@@ -8,13 +8,16 @@ final class OutingViewModel: ObservableObject {
     @Published private(set) var canMonitorOutings = false
     @Published private(set) var isLocationSharing = false
     @Published private(set) var lastLocationUpdate: Date?
+    @Published private(set) var locationSharingState: OutingLocationManager.SharingState = .idle
     @Published private(set) var isLoading = true
     @Published var errorMessage: String?
 
     let role: AccountRole
     private let repository: OutingRepository
     private let hasLeaderRole: Bool
+    private let locationManager = OutingLocationManager()
     private var locationTask: Task<Void, Never>?
+    private var deviceLocationTask: Task<Void, Never>?
 
     init(role: AccountRole, repository: OutingRepository, hasLeaderRole: Bool = false) {
         self.role = role
@@ -63,13 +66,26 @@ final class OutingViewModel: ObservableObject {
     func stopLocationSharing() {
         locationTask?.cancel()
         locationTask = nil
+        deviceLocationTask?.cancel()
+        deviceLocationTask = nil
         isLocationSharing = false
+        locationManager.stopSharing()
+        locationSharingState = locationManager.state
     }
 
     func startOuting(_ outing: OutingRequest) async {
         do {
             let started = try await repository.startOuting(outing)
             outings = outings.map { $0.id == started.id ? started : $0 }
+            locationManager.requestPermissionAndStartSharing()
+            locationSharingState = locationManager.state
+            let locationUpdates = locationManager.updates()
+            deviceLocationTask = Task { [weak self] in
+                for await coordinate in locationUpdates {
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run { self?.appendLocation(coordinate) }
+                }
+            }
             await loadRoute(for: started)
         } catch {
             errorMessage = "외출 시작 처리에 실패했어요."
@@ -97,6 +113,20 @@ final class OutingViewModel: ObservableObject {
 
     deinit {
         locationTask?.cancel()
+        deviceLocationTask?.cancel()
+    }
+
+    private func appendLocation(_ coordinate: OutingCoordinate) {
+        guard let route else { return }
+        let updatedPoints = route.points + [coordinate]
+        self.route = OutingRoute(
+            outingID: route.outingID,
+            points: updatedPoints,
+            startedAt: route.startedAt,
+            updatedAt: Date(),
+            status: .outing
+        )
+        lastLocationUpdate = self.route?.updatedAt
     }
 
     func searchTeachers(_ keyword: String) async -> [OutingTeacher] {

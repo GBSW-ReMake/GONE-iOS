@@ -266,7 +266,10 @@ private struct StudentOutingListView: View {
             StudentOutingDetailView(
                 outing: outing,
                 searchTeachers: viewModel.searchTeachers,
-                update: viewModel.updatePreview
+                update: viewModel.updatePreview,
+                startOuting: { await viewModel.startOuting($0) },
+                completeReturn: { await viewModel.completeReturn(for: $0) },
+                locationSharingState: viewModel.locationSharingState
             )
         }
     }
@@ -507,12 +510,18 @@ private struct StudentOutingDetailView: View {
     @State private var outing: OutingRequest
     let searchTeachers: (String) async -> [OutingTeacher]
     let update: (OutingRequest, OutingDraft) -> OutingRequest?
+    let startOuting: (OutingRequest) async -> Void
+    let completeReturn: (OutingRequest) async -> Void
+    let locationSharingState: OutingLocationManager.SharingState
     @State private var isEditing = false
 
-    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?) {
+    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Void, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
         _outing = State(initialValue: outing)
         self.searchTeachers = searchTeachers
         self.update = update
+        self.startOuting = startOuting
+        self.completeReturn = completeReturn
+        self.locationSharingState = locationSharingState
     }
 
     var body: some View {
@@ -530,6 +539,23 @@ private struct StudentOutingDetailView: View {
                 detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                 detailRow("사유", outing.reason)
                 detailRow("지정 선생님", outing.teacher.name)
+                if case .approved = outing.status {
+                    locationPermissionNotice
+                    actionButton(title: "외출 시작") {
+                        Task {
+                            await startOuting(outing)
+                            outing.status = .outing
+                        }
+                    }
+                } else if case .outing = outing.status {
+                    locationPermissionNotice
+                    actionButton(title: "복귀 완료") {
+                        Task {
+                            await completeReturn(outing)
+                            outing.status = .completed
+                        }
+                    }
+                }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -563,6 +589,23 @@ private struct StudentOutingDetailView: View {
             Text(title).font(.footnote).foregroundStyle(Color.goneTextSecondary)
             Text(value).font(.body)
         }
+    }
+
+    private var locationPermissionNotice: some View {
+        Text(locationSharingState == .denied
+             ? "위치 권한이 꺼져 있어 외출 중 위치를 공유할 수 없습니다. 설정에서 위치 권한을 허용해 주세요."
+             : "외출 시작 시 현재 위치가 선도부에게 공유됩니다. 복귀 완료를 누르면 위치 공유가 종료됩니다.")
+            .font(.caption)
+            .foregroundStyle(locationSharingState == .denied ? Color.goneStatusError : Color.goneTextSecondary)
+            .lineSpacing(4)
+    }
+
+    private func actionButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
     }
 }
 
