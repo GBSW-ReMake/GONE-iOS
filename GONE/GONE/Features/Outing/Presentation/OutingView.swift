@@ -566,6 +566,7 @@ private enum StudentOutingFlowState: Equatable {
     case waiting
     case readyToLeave
     case outing
+    case returning
     case completed
 }
 

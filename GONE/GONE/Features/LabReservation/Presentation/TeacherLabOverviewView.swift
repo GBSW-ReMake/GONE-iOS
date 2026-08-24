@@ -107,9 +107,7 @@ struct TeacherLabOverviewView: View {
         let calendar = Calendar.current
         let month = calendar.component(.month, from: viewModel.selectedDate)
         let day = calendar.component(.day, from: viewModel.selectedDate)
-        return Text("\(month)월")
-            .foregroundStyle(Color.goneBrandPrimary)
-        + Text(" \(day)일 실습실 현황")
+        return Text("\(month)월 \(day)일 실습실 현황")
             .foregroundStyle(Color.goneTextPrimary)
     }
 }

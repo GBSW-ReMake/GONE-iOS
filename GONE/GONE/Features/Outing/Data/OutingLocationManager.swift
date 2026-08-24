@@ -29,10 +29,6 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
     }
 
     func requestPermissionAndStartSharing() {
-        guard CLLocationManager.locationServicesEnabled() else {
-            state = .unavailable
-            return
-        }
         authorizationStatus = manager.authorizationStatus
         switch authorizationStatus {
         case .authorizedAlways:
