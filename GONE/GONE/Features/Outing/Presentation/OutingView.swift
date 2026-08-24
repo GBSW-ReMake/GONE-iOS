@@ -57,7 +57,7 @@ private struct LeaderOutingListView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
-                Text(Date(), format: .dateTime.month().day().weekday(.wide))
+                Text(dateText(Date()))
                     .font(.footnote)
                     .foregroundStyle(Color.goneTextSecondary)
                 Text("외출 학생 관리")
@@ -71,7 +71,7 @@ private struct LeaderOutingListView: View {
                         Button { selectedOuting = outing } label: {
                             VStack(alignment: .leading, spacing: GONESpacing.small) {
                                 statusBadge(outing.status)
-                                Text(Date(), format: .dateTime.month().day().weekday(.wide))
+                                Text(dateText(Date()))
                                     .font(.caption)
                                     .foregroundStyle(Color.goneTextSecondary)
                                 Text("\(outing.student.studentNumber) \(outing.student.name)")
@@ -129,7 +129,7 @@ private struct OutingRouteDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
                 detailStatusBadge
-                Text(Date(), format: .dateTime.month().day().weekday(.wide))
+                Text(dateText(Date()))
                     .font(.subheadline)
                     .foregroundStyle(Color.goneTextSecondary)
                 Text("\(outing.student.studentNumber) \(outing.student.name)")
