@@ -20,6 +20,10 @@ struct OutingView: View {
                     LeaderOutingListView(viewModel: viewModel) {
                         viewModel.errorMessage = nil
                         navigationPath.append(.requestForm)
+                    } showMyOutings: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showsLeaderMonitor = false
+                        }
                     }
                 } else if viewModel.role == .teacher {
                     TeacherOutingListView(viewModel: viewModel)
@@ -27,6 +31,10 @@ struct OutingView: View {
                     StudentOutingListView(viewModel: viewModel) {
                         viewModel.errorMessage = nil
                         navigationPath.append(.requestForm)
+                    } showLeaderMonitor: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showsLeaderMonitor = true
+                        }
                     }
                 }
             }
@@ -66,6 +74,7 @@ private enum OutingNavigationRoute: Hashable {
 private struct LeaderOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
     let apply: () -> Void
+    let showMyOutings: () -> Void
     @State private var selectedOuting: OutingRequest?
 
     private var activeOutings: [OutingRequest] {
@@ -85,6 +94,11 @@ private struct LeaderOutingListView: View {
                 Text("외출 학생 관리")
                     .font(.title.bold())
                     .foregroundStyle(Color.goneTextPrimary)
+                Button("내 외출") {
+                    showMyOutings()
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.goneBrandPrimary)
 
                 if activeOutings.isEmpty {
                     ContentUnavailableView("외출 중인 학생이 없어요", systemImage: "location.slash", description: Text("학생이 외출을 시작하면 이곳에 표시됩니다."))
@@ -263,6 +277,7 @@ private struct ProfileMarker: View {
 private struct StudentOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
     let apply: () -> Void
+    let showLeaderMonitor: () -> Void
     @State private var selectedOuting: OutingRequest?
 
     var body: some View {
@@ -273,6 +288,11 @@ private struct StudentOutingListView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: GONESpacing.large) {
                         Text("외출 신청").font(.title2.bold())
+                        if viewModel.canMonitorOutings {
+                            Button("선도부 관리", action: showLeaderMonitor)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.goneBrandPrimary)
+                        }
                         Text("이번 주 안에서만 신청할 수 있으며, 시간이 겹치지 않으면 여러 건을 신청할 수 있어요.")
                             .font(.subheadline).foregroundStyle(Color.goneTextSecondary)
                         ForEach(viewModel.outings) { outing in
