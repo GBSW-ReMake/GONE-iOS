@@ -1,6 +1,7 @@
 @preconcurrency import CoreLocation
 import Combine
 import Foundation
+import UIKit
 
 @MainActor
 final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
@@ -36,7 +37,7 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
         switch authorizationStatus {
         case .authorizedAlways:
             state = .sharing
-            manager.allowsBackgroundLocationUpdates = true
+            manager.allowsBackgroundLocationUpdates = hasLocationBackgroundMode
             manager.startUpdatingLocation()
         case .authorizedWhenInUse:
             state = .denied
@@ -66,7 +67,7 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
         authorizationStatus = manager.authorizationStatus
         if authorizationStatus == .authorizedAlways {
             state = .sharing
-            manager.allowsBackgroundLocationUpdates = true
+            manager.allowsBackgroundLocationUpdates = hasLocationBackgroundMode
             manager.startUpdatingLocation()
         } else if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .denied || authorizationStatus == .restricted {
             state = .denied
@@ -82,5 +83,10 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         state = .unavailable
+    }
+
+    private var hasLocationBackgroundMode: Bool {
+        let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+        return modes.contains("location")
     }
 }

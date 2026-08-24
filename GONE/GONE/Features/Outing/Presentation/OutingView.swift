@@ -561,6 +561,14 @@ private struct OutingRequestForm: View {
 
 private enum TimeSelectionMode: Equatable { case lunch, dinner, custom }
 
+private enum StudentOutingFlowState: Equatable {
+    case approved
+    case waiting
+    case readyToLeave
+    case outing
+    case completed
+}
+
 private struct StudentOutingDetailView: View {
     @State private var outing: OutingRequest
     let searchTeachers: (String) async -> [OutingTeacher]
@@ -570,9 +578,11 @@ private struct StudentOutingDetailView: View {
     let locationSharingState: OutingLocationManager.SharingState
     @State private var isEditing = false
     @State private var isShowingLocationShareAlert = false
+    @State private var flowState: StudentOutingFlowState
 
     init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
         _outing = State(initialValue: outing)
+        _flowState = State(initialValue: Self.flowState(for: outing.status))
         self.searchTeachers = searchTeachers
         self.update = update
         self.startOuting = startOuting
@@ -595,20 +605,7 @@ private struct StudentOutingDetailView: View {
                 detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                 detailRow("사유", outing.reason)
                 detailRow("지정 선생님", outing.teacher.name)
-                if case .approved = outing.status {
-                    locationPermissionNotice
-                    longPressActionButton(title: "외출", tint: Color.goneBrandPrimary) {
-                        isShowingLocationShareAlert = true
-                    }
-                } else if case .outing = outing.status {
-                    locationPermissionNotice
-                    longPressActionButton(title: "복귀", tint: Color.goneStatusReturn) {
-                        Task {
-                            await completeReturn(outing)
-                            outing.status = .completed
-                        }
-                    }
-                }
+                flowContent
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -640,6 +637,7 @@ private struct StudentOutingDetailView: View {
                 Task {
                     if await startOuting(outing) {
                         outing.status = .outing
+                        flowState = .outing
                     }
                 }
             }
@@ -654,6 +652,56 @@ private struct StudentOutingDetailView: View {
             Text(title).font(.footnote).foregroundStyle(Color.goneTextSecondary)
             Text(value).font(.body)
         }
+    }
+
+    @ViewBuilder
+    private var flowContent: some View {
+        switch flowState {
+        case .approved:
+            Button("임시로 외출") {
+                flowState = .waiting
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    guard flowState == .waiting else { return }
+                    flowState = .readyToLeave
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.goneBrandPrimary)
+        case .waiting:
+            statePanel(title: "대기 상태", value: "10분 전", tint: Color.goneStatusWaiting, message: "잠시 후 외출을 시작할 수 있어요.")
+        case .readyToLeave:
+            statePanel(title: "외출 가능", value: "지금", tint: Color.goneBrandPrimary, message: "외출 버튼을 1.2초 동안 길게 눌러 시작하세요.")
+            longPressActionButton(title: "외출", tint: Color.goneBrandPrimary) {
+                isShowingLocationShareAlert = true
+            }
+        case .outing:
+            locationPermissionNotice
+            statePanel(title: "외출 중", value: "위치 공유 중", tint: Color.goneStatusOuting, message: "현재 위치가 선도부에게 공유되고 있습니다.")
+            longPressActionButton(title: "복귀", tint: Color.goneStatusReturn) {
+                Task {
+                    await completeReturn(outing)
+                    outing.status = .completed
+                    flowState = .completed
+                }
+            }
+        case .completed:
+            statePanel(title: "복귀 완료", value: "도착", tint: Color.goneBrandPrimary, message: "복귀가 완료되어 위치 공유가 종료되었습니다.")
+        }
+    }
+
+    private func statePanel(title: String, value: String, tint: Color, message: String) -> some View {
+        VStack(spacing: GONESpacing.medium) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextSecondary)
+            Text(value).font(.title2.bold()).foregroundStyle(tint)
+            Text(message).font(.caption).foregroundStyle(Color.goneTextSecondary)
+                .multilineTextAlignment(.center)
+            Circle()
+                .fill(tint)
+                .frame(width: 112, height: 112)
+                .overlay(Text(title == "대기 상태" ? "대기" : title == "복귀 완료" ? "완료" : title).font(.title3.bold()).foregroundStyle(.white))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, GONESpacing.medium)
     }
 
     private var locationPermissionNotice: some View {
@@ -681,9 +729,21 @@ private struct StudentOutingDetailView: View {
             .background(tint, in: Circle())
             .frame(maxWidth: .infinity)
             .contentShape(Circle())
-            .onLongPressGesture(minimumDuration: 1.2, maximumDistance: 20, perform: action)
+            .onLongPressGesture(minimumDuration: 1.2, maximumDistance: 20) {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                action()
+            }
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("1.2초 동안 길게 눌러 실행합니다.")
+    }
+
+    private static func flowState(for status: OutingRequest.Status) -> StudentOutingFlowState {
+        switch status {
+        case .approved: .approved
+        case .outing: .outing
+        case .completed: .completed
+        case .pendingApproval, .rejected: .approved
+        }
     }
 }
 
