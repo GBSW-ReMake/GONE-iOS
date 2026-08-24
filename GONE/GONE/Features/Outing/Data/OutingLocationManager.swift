@@ -16,8 +16,12 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
     @Published private(set) var state: SharingState = .idle
     @Published private(set) var latestCoordinate: OutingCoordinate?
     @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published private(set) var isNearSchool = false
 
     private let manager = CLLocationManager()
+    // TODO: 실제 학교 좌표를 서버 설정값으로 교체해야 합니다.
+    private let schoolLocation = CLLocation(latitude: 35.1579, longitude: 128.9825)
+    private let schoolArrivalRadius: CLLocationDistance = 150
     private var continuation: AsyncStream<OutingCoordinate>.Continuation?
 
     override init() {
@@ -74,6 +78,7 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
         guard let location = locations.last else { return }
         let coordinate = OutingCoordinate(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
         latestCoordinate = coordinate
+        isNearSchool = location.distance(from: schoolLocation) <= schoolArrivalRadius
         continuation?.yield(coordinate)
     }
 

@@ -324,7 +324,8 @@ private struct StudentOutingListView: View {
                 update: viewModel.updatePreview,
                 startOuting: { await viewModel.startOuting($0) },
                 completeReturn: { await viewModel.completeReturn(for: $0) },
-                locationSharingState: viewModel.locationSharingState
+                locationSharingState: viewModel.locationSharingState,
+                isNearSchool: { viewModel.isNearSchool }
             )
         }
     }
@@ -577,16 +578,18 @@ private struct StudentOutingDetailView: View {
     let startOuting: (OutingRequest) async -> Bool
     let completeReturn: (OutingRequest) async -> Void
     let locationSharingState: OutingLocationManager.SharingState
+    let isNearSchool: () -> Bool
     @State private var isEditing = false
     @State private var isShowingFlowPage = false
 
-    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
+    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState, isNearSchool: @escaping () -> Bool) {
         _outing = State(initialValue: outing)
         self.searchTeachers = searchTeachers
         self.update = update
         self.startOuting = startOuting
         self.completeReturn = completeReturn
         self.locationSharingState = locationSharingState
+        self.isNearSchool = isNearSchool
     }
 
     var body: some View {
@@ -649,7 +652,8 @@ private struct StudentOutingDetailView: View {
                 initialState: outing.status == .outing ? .outing : .waiting,
                 startOuting: startOuting,
                 completeReturn: completeReturn,
-                locationSharingState: locationSharingState
+                locationSharingState: locationSharingState,
+                isNearSchool: isNearSchool
             )
         }
     }
@@ -685,16 +689,19 @@ private struct StudentOutingFlowPage: View {
     let startOuting: (OutingRequest) async -> Bool
     let completeReturn: (OutingRequest) async -> Void
     let locationSharingState: OutingLocationManager.SharingState
+    let isNearSchool: () -> Bool
     @State private var state: StudentOutingFlowState
     @State private var isShowingLocationShareAlert = false
     @State private var isCharging = false
     @State private var hapticTimer: Timer?
+    @State private var hasReachedSchool = false
 
-    init(outing: OutingRequest, initialState: StudentOutingFlowState, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
+    init(outing: OutingRequest, initialState: StudentOutingFlowState, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState, isNearSchool: @escaping () -> Bool) {
         self.outing = outing
         self.startOuting = startOuting
         self.completeReturn = completeReturn
         self.locationSharingState = locationSharingState
+        self.isNearSchool = isNearSchool
         _state = State(initialValue: initialState)
     }
 
@@ -723,6 +730,12 @@ private struct StudentOutingFlowPage: View {
             guard !Task.isCancelled else { return }
             state = .readyToLeave
         }
+        .task {
+            while !Task.isCancelled {
+                hasReachedSchool = isNearSchool()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
         .alert("위치 공유가 필요해요", isPresented: $isShowingLocationShareAlert) {
             Button("항상 허용하고 외출") {
                 Task {
@@ -739,7 +752,7 @@ private struct StudentOutingFlowPage: View {
     private var stateHeader: some View {
         VStack(spacing: GONESpacing.small) {
             Text(headerTitle)
-                .font(.title2.bold())
+                .font(.title.bold())
                 .foregroundStyle(Color.goneTextPrimary)
             Text(headerValue)
                 .font(.system(size: 48, weight: .bold))
@@ -749,7 +762,7 @@ private struct StudentOutingFlowPage: View {
 
     private var chargingButton: some View {
         Text(buttonTitle)
-            .font(.title3.weight(.bold))
+            .font(.title2.weight(.bold))
             .foregroundStyle(.white)
             .frame(width: 160, height: 160)
             .background(color, in: Circle())
@@ -773,6 +786,7 @@ private struct StudentOutingFlowPage: View {
         case .readyToLeave:
             isShowingLocationShareAlert = true
         case .outing:
+            guard hasReachedSchool else { return }
             Task {
                 await completeReturn(outing)
                 state = .completed
@@ -824,7 +838,7 @@ private struct StudentOutingFlowPage: View {
         case .approved: "외출"
         case .waiting: "대기"
         case .readyToLeave: "외출"
-        case .outing: "외출 중"
+        case .outing: hasReachedSchool ? "복귀" : "외출 중"
         case .returning: "복귀"
         case .completed: "완료"
         }
@@ -835,7 +849,9 @@ private struct StudentOutingFlowPage: View {
         case .approved: "임시로 외출을 눌러 외출 준비를 시작해 주세요."
         case .waiting: "잠시 후 외출을 시작할 수 있습니다."
         case .readyToLeave: "외출을 시작하면 현재 위치와 이동 경로가\n선도부 학생에게 실시간으로 공유됩니다."
-        case .outing: "현재 위치와 이동 경로를\n실시간으로 공유하고 있습니다."
+        case .outing: hasReachedSchool
+            ? "학교 근처에 도착했습니다.\n복귀 버튼을 눌러 외출을 종료해 주세요."
+            : "현재 위치와 이동 경로를\n실시간으로 공유하고 있습니다."
         case .returning: "복귀 후 버튼을 눌러\n외출을 종료해 주세요."
         case .completed: "복귀가 완료되어 위치 공유가 종료되었습니다."
         }
@@ -846,7 +862,7 @@ private struct StudentOutingFlowPage: View {
         case .approved: Color.goneBrandPrimary
         case .waiting: Color.goneStatusWaiting
         case .readyToLeave: Color.goneBrandPrimary
-        case .outing: Color.goneStatusOuting
+        case .outing: hasReachedSchool ? Color.goneStatusReturn : Color.goneStatusOuting
         case .returning: Color.goneStatusReturn
         case .completed: Color.goneBrandPrimary
         }

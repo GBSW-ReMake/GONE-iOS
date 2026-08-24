@@ -9,6 +9,7 @@ final class OutingViewModel: ObservableObject {
     @Published private(set) var isLocationSharing = false
     @Published private(set) var lastLocationUpdate: Date?
     @Published private(set) var locationSharingState: OutingLocationManager.SharingState = .idle
+    @Published private(set) var isNearSchool = false
     @Published private(set) var isLoading = true
     @Published var errorMessage: String?
 
@@ -69,6 +70,7 @@ final class OutingViewModel: ObservableObject {
         deviceLocationTask?.cancel()
         deviceLocationTask = nil
         isLocationSharing = false
+        isNearSchool = false
         locationManager.stopSharing()
         locationSharingState = locationManager.state
     }
@@ -87,7 +89,10 @@ final class OutingViewModel: ObservableObject {
             deviceLocationTask = Task { [weak self] in
                 for await coordinate in locationUpdates {
                     guard !Task.isCancelled else { return }
-                    await MainActor.run { self?.appendLocation(coordinate) }
+                    await MainActor.run {
+                        self?.appendLocation(coordinate)
+                        self?.isNearSchool = self?.locationManager.isNearSchool ?? false
+                    }
                 }
             }
             await loadRoute(for: started)
