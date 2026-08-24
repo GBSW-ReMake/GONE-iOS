@@ -13,16 +13,28 @@ actor MockOutingRepository: OutingRepository {
         let today = calendar.startOfDay(for: Date())
         let departure = calendar.date(byAdding: .minute, value: 12 * 60, to: today) ?? today
         let returnTime = calendar.date(byAdding: .minute, value: 12 * 60 + 40, to: today) ?? today
-        outings = [OutingRequest(
-            id: "O-001",
-            student: OutingStudent(name: "김은찬", studentNumber: "3206", profileImageName: "student-profile"),
-            date: today,
-            departureTime: departure,
-            returnTime: returnTime,
-            reason: "병원 진료",
-            teacher: teachers[0],
-            status: .outing
-        )]
+        outings = [
+            OutingRequest(
+                id: "O-001",
+                student: OutingStudent(name: "김은찬", studentNumber: "3206", profileImageName: "student-profile"),
+                date: today,
+                departureTime: departure,
+                returnTime: returnTime,
+                reason: "병원 진료",
+                teacher: teachers[0],
+                status: .approved
+            ),
+            OutingRequest(
+                id: "O-002",
+                student: OutingStudent(name: "박지민", studentNumber: "3201"),
+                date: today,
+                departureTime: departure,
+                returnTime: returnTime,
+                reason: "병원 진료",
+                teacher: teachers[0],
+                status: .outing
+            )
+        ]
     }
 
     func fetchOutings(for role: AccountRole) async throws -> [OutingRequest] {

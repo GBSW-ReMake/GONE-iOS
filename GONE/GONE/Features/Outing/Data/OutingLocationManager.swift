@@ -34,12 +34,15 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
         }
         authorizationStatus = manager.authorizationStatus
         switch authorizationStatus {
-        case .authorizedWhenInUse, .authorizedAlways:
+        case .authorizedAlways:
             state = .sharing
+            manager.allowsBackgroundLocationUpdates = true
             manager.startUpdatingLocation()
+        case .authorizedWhenInUse:
+            state = .denied
         case .notDetermined:
             state = .requestingPermission
-            manager.requestWhenInUseAuthorization()
+            manager.requestAlwaysAuthorization()
         default:
             state = .denied
         }
@@ -61,10 +64,11 @@ final class OutingLocationManager: NSObject, ObservableObject, @preconcurrency C
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
-        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+        if authorizationStatus == .authorizedAlways {
             state = .sharing
+            manager.allowsBackgroundLocationUpdates = true
             manager.startUpdatingLocation()
-        } else if authorizationStatus == .denied || authorizationStatus == .restricted {
+        } else if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .denied || authorizationStatus == .restricted {
             state = .denied
         }
     }

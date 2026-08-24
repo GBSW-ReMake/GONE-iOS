@@ -565,12 +565,13 @@ private struct StudentOutingDetailView: View {
     @State private var outing: OutingRequest
     let searchTeachers: (String) async -> [OutingTeacher]
     let update: (OutingRequest, OutingDraft) -> OutingRequest?
-    let startOuting: (OutingRequest) async -> Void
+    let startOuting: (OutingRequest) async -> Bool
     let completeReturn: (OutingRequest) async -> Void
     let locationSharingState: OutingLocationManager.SharingState
     @State private var isEditing = false
+    @State private var isShowingLocationShareAlert = false
 
-    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Void, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
+    init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
         _outing = State(initialValue: outing)
         self.searchTeachers = searchTeachers
         self.update = update
@@ -596,15 +597,12 @@ private struct StudentOutingDetailView: View {
                 detailRow("지정 선생님", outing.teacher.name)
                 if case .approved = outing.status {
                     locationPermissionNotice
-                    actionButton(title: "외출 시작") {
-                        Task {
-                            await startOuting(outing)
-                            outing.status = .outing
-                        }
+                    longPressActionButton(title: "외출", tint: Color.goneBrandPrimary) {
+                        isShowingLocationShareAlert = true
                     }
                 } else if case .outing = outing.status {
                     locationPermissionNotice
-                    actionButton(title: "복귀 완료") {
+                    longPressActionButton(title: "복귀", tint: Color.goneStatusReturn) {
                         Task {
                             await completeReturn(outing)
                             outing.status = .completed
@@ -637,6 +635,18 @@ private struct StudentOutingDetailView: View {
                 return true
             }
         }
+        .alert("위치 공유가 필요해요", isPresented: $isShowingLocationShareAlert) {
+            Button("항상 허용하고 외출") {
+                Task {
+                    if await startOuting(outing) {
+                        outing.status = .outing
+                    }
+                }
+            }
+            Button("취소", role: .cancel) { }
+        } message: {
+            Text("외출 중에는 선도부가 학생의 이동 경로를 확인할 수 있도록 위치를 항상 공유해야 합니다. 위치 권한에서 ‘항상 허용’을 선택해 주세요.")
+        }
     }
 
     private func detailRow(_ title: String, _ value: String) -> some View {
@@ -661,6 +671,19 @@ private struct StudentOutingDetailView: View {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 52)
             .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func longPressActionButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Text(title)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(width: 112, height: 112)
+            .background(tint, in: Circle())
+            .frame(maxWidth: .infinity)
+            .contentShape(Circle())
+            .onLongPressGesture(minimumDuration: 1.2, maximumDistance: 20, perform: action)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("1.2초 동안 길게 눌러 실행합니다.")
     }
 }
 

@@ -73,12 +73,16 @@ final class OutingViewModel: ObservableObject {
         locationSharingState = locationManager.state
     }
 
-    func startOuting(_ outing: OutingRequest) async {
+    func startOuting(_ outing: OutingRequest) async -> Bool {
+        locationManager.requestPermissionAndStartSharing()
+        locationSharingState = locationManager.state
+        guard locationManager.state == .sharing else {
+            errorMessage = "외출하려면 위치 권한에서 ‘항상 허용’을 선택해 주세요."
+            return false
+        }
         do {
             let started = try await repository.startOuting(outing)
             outings = outings.map { $0.id == started.id ? started : $0 }
-            locationManager.requestPermissionAndStartSharing()
-            locationSharingState = locationManager.state
             let locationUpdates = locationManager.updates()
             deviceLocationTask = Task { [weak self] in
                 for await coordinate in locationUpdates {
@@ -87,8 +91,10 @@ final class OutingViewModel: ObservableObject {
                 }
             }
             await loadRoute(for: started)
+            return true
         } catch {
             errorMessage = "외출 시작 처리에 실패했어요."
+            return false
         }
     }
 
