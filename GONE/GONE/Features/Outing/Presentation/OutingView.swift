@@ -3,7 +3,7 @@ import MapKit
 
 struct OutingView: View {
     @ObservedObject var viewModel: OutingViewModel
-    @State private var navigationPath: [OutingRoute] = []
+    @State private var navigationPath: [OutingNavigationRoute] = []
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -22,7 +22,7 @@ struct OutingView: View {
                 }
             }
             .background(Color.goneScreenBackground.ignoresSafeArea())
-            .navigationDestination(for: OutingRoute.self) { route in
+            .navigationDestination(for: OutingNavigationRoute.self) { route in
                 switch route {
                 case .requestForm:
                     OutingRequestForm(searchTeachers: viewModel.searchTeachers) { draft in
@@ -38,7 +38,7 @@ struct OutingView: View {
     }
 }
 
-private enum OutingRoute: Hashable {
+private enum OutingNavigationRoute: Hashable {
     case requestForm
 }
 

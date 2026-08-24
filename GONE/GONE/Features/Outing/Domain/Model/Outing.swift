@@ -14,7 +14,7 @@ struct OutingTeacher: Identifiable, Equatable, Hashable {
     let affiliation: String
 }
 
-struct OutingStudent: Equatable, Hashable {
+nonisolated struct OutingStudent: Equatable, Hashable {
     let name: String
     let studentNumber: String
     let profileImageName: String?
@@ -27,7 +27,7 @@ struct OutingStudent: Equatable, Hashable {
 }
 
 struct OutingRequest: Identifiable, Equatable, Hashable {
-    enum Status: Equatable, Hashable {
+    nonisolated enum Status: Equatable, Hashable {
         case pendingApproval
         case approved
         case outing
@@ -45,12 +45,12 @@ struct OutingRequest: Identifiable, Equatable, Hashable {
     var status: Status
 }
 
-struct OutingCoordinate: Equatable, Hashable {
+nonisolated struct OutingCoordinate: Equatable, Hashable {
     let latitude: Double
     let longitude: Double
 }
 
-struct OutingRoute: Equatable, Hashable {
+nonisolated struct OutingRoute: Equatable, Hashable {
     enum Status: Equatable, Hashable {
         case outing
         case arrived
