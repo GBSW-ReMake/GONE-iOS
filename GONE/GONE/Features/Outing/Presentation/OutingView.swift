@@ -4,14 +4,23 @@ import MapKit
 struct OutingView: View {
     @ObservedObject var viewModel: OutingViewModel
     @State private var navigationPath: [OutingNavigationRoute] = []
+    @State private var showsLeaderMonitor: Bool
+
+    init(viewModel: OutingViewModel) {
+        self.viewModel = viewModel
+        _showsLeaderMonitor = State(initialValue: viewModel.canMonitorOutings)
+    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
                 if viewModel.isLoading {
                     ProgressView("외출 정보를 불러오는 중")
-                } else if viewModel.canMonitorOutings {
-                    LeaderOutingListView(viewModel: viewModel)
+                } else if viewModel.canMonitorOutings && showsLeaderMonitor {
+                    LeaderOutingListView(viewModel: viewModel) {
+                        viewModel.errorMessage = nil
+                        navigationPath.append(.requestForm)
+                    }
                 } else if viewModel.role == .teacher {
                     TeacherOutingListView(viewModel: viewModel)
                 } else {
@@ -31,6 +40,18 @@ struct OutingView: View {
                 }
             }
         }
+        .toolbar {
+            if viewModel.canMonitorOutings {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(showsLeaderMonitor ? "내 외출" : "선도부") {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showsLeaderMonitor.toggle()
+                        }
+                    }
+                    .font(.caption.weight(.semibold))
+                }
+            }
+        }
         .task {
             guard viewModel.isLoading else { return }
             await viewModel.load()
@@ -44,6 +65,7 @@ private enum OutingNavigationRoute: Hashable {
 
 private struct LeaderOutingListView: View {
     @ObservedObject var viewModel: OutingViewModel
+    let apply: () -> Void
     @State private var selectedOuting: OutingRequest?
 
     private var activeOutings: [OutingRequest] {
@@ -103,10 +125,10 @@ private struct LeaderOutingListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.goneScreenBackground.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: {})
+            GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
                 .padding(.horizontal, GONESpacing.screenHorizontal)
                 .padding(.top, GONESpacing.small)
-                .padding(.bottom, GONESpacing.medium)
+                .padding(.bottom, GONESpacing.large)
                 .background(Color.goneScreenBackground)
         }
         .navigationDestination(item: $selectedOuting) { outing in
@@ -271,7 +293,7 @@ private struct StudentOutingListView: View {
                 GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
                     .padding(.horizontal, GONESpacing.screenHorizontal)
                     .padding(.top, GONESpacing.small)
-                    .padding(.bottom, GONESpacing.medium)
+                    .padding(.bottom, GONESpacing.large)
                     .background(Color.goneScreenBackground)
             }
         }
