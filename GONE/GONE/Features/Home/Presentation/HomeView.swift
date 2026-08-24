@@ -539,6 +539,8 @@ private struct RequestStatusSection: View {
             let status: DashboardRequest.Status = switch outing.status {
             case .pendingApproval: .pending
             case .approved: .completed
+            case .outing: .reserved
+            case .completed: .completed
             case .rejected: .rejected
             }
             return ("\(outingDateFormatter.string(from: outing.date)) · \(outing.reason)", status)
