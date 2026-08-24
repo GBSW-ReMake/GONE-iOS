@@ -141,15 +141,19 @@ private struct OutingRouteDetailView: View {
                     Text("이동 경로")
                         .font(.headline.weight(.bold))
                     routeMap(route)
-                    Text("복귀 알림 예정")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.goneTextSecondary)
-                    Text(route.status == .arrived
-                         ? "학생이 복귀 버튼을 눌러 경로 추적이 종료되었고 선도부에게 복귀 완료 알림이 전송되었습니다."
-                         : "학생이 복귀 버튼을 누르면 경로 추적이 종료되고 선도부에게 복귀 완료 알림이 전송됩니다.")
-                        .font(.caption)
-                        .foregroundStyle(Color.goneTextSecondary)
-                        .lineSpacing(5)
+                    VStack(alignment: .leading, spacing: GONESpacing.small) {
+                        Text("복귀 알림 예정")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.goneTextSecondary)
+                        Text(route.status == .arrived
+                             ? "학생이 복귀 버튼을 눌러 경로 추적이 종료되었고 선도부에게 복귀 완료 알림이 전송되었습니다."
+                             : "학생이 복귀 버튼을 누르면 경로 추적이 종료되고 선도부에게 복귀 완료 알림이 전송됩니다.")
+                            .font(.caption)
+                            .foregroundStyle(Color.goneTextSecondary)
+                            .lineSpacing(5)
+                    }
+                    .padding(.top, GONESpacing.medium)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     ProgressView("경로를 불러오는 중")
                         .frame(maxWidth: .infinity, minHeight: 300)
@@ -160,7 +164,7 @@ private struct OutingRouteDetailView: View {
         }
         .navigationTitle("외출")
         .navigationBarTitleDisplayMode(.inline)
-        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .background(Color.white.ignoresSafeArea())
         .task { await viewModel.loadRoute(for: outing) }
         .onDisappear { viewModel.stopLocationSharing() }
     }
