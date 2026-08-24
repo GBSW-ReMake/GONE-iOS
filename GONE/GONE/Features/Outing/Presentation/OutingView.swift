@@ -577,12 +577,10 @@ private struct StudentOutingDetailView: View {
     let completeReturn: (OutingRequest) async -> Void
     let locationSharingState: OutingLocationManager.SharingState
     @State private var isEditing = false
-    @State private var isShowingLocationShareAlert = false
-    @State private var flowState: StudentOutingFlowState
+    @State private var isShowingFlowPage = false
 
     init(outing: OutingRequest, searchTeachers: @escaping (String) async -> [OutingTeacher], update: @escaping (OutingRequest, OutingDraft) -> OutingRequest?, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
         _outing = State(initialValue: outing)
-        _flowState = State(initialValue: Self.flowState(for: outing.status))
         self.searchTeachers = searchTeachers
         self.update = update
         self.startOuting = startOuting
@@ -605,7 +603,19 @@ private struct StudentOutingDetailView: View {
                 detailRow("시간", "\(timeText(outing.departureTime)) ~ \(timeText(outing.returnTime))")
                 detailRow("사유", outing.reason)
                 detailRow("지정 선생님", outing.teacher.name)
-                flowContent
+                if case .approved = outing.status {
+                    Button("임시로 외출") {
+                        isShowingFlowPage = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.goneBrandPrimary)
+                } else if case .outing = outing.status {
+                    Button("외출 상태 보기") {
+                        isShowingFlowPage = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.goneBrandPrimary)
+                }
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -632,18 +642,14 @@ private struct StudentOutingDetailView: View {
                 return true
             }
         }
-        .alert("위치 공유가 필요해요", isPresented: $isShowingLocationShareAlert) {
-            Button("항상 허용하고 외출") {
-                Task {
-                    if await startOuting(outing) {
-                        outing.status = .outing
-                        flowState = .outing
-                    }
-                }
-            }
-            Button("취소", role: .cancel) { }
-        } message: {
-            Text("외출 중에는 선도부가 학생의 이동 경로를 확인할 수 있도록 위치를 항상 공유해야 합니다. 위치 권한에서 ‘항상 허용’을 선택해 주세요.")
+        .navigationDestination(isPresented: $isShowingFlowPage) {
+            StudentOutingFlowPage(
+                outing: outing,
+                initialState: outing.status == .outing ? .outing : .waiting,
+                startOuting: startOuting,
+                completeReturn: completeReturn,
+                locationSharingState: locationSharingState
+            )
         }
     }
 
@@ -652,56 +658,6 @@ private struct StudentOutingDetailView: View {
             Text(title).font(.footnote).foregroundStyle(Color.goneTextSecondary)
             Text(value).font(.body)
         }
-    }
-
-    @ViewBuilder
-    private var flowContent: some View {
-        switch flowState {
-        case .approved:
-            Button("임시로 외출") {
-                flowState = .waiting
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    guard flowState == .waiting else { return }
-                    flowState = .readyToLeave
-                }
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color.goneBrandPrimary)
-        case .waiting:
-            statePanel(title: "대기 상태", value: "10분 전", tint: Color.goneStatusWaiting, message: "잠시 후 외출을 시작할 수 있어요.")
-        case .readyToLeave:
-            statePanel(title: "외출 가능", value: "지금", tint: Color.goneBrandPrimary, message: "외출 버튼을 1.2초 동안 길게 눌러 시작하세요.")
-            longPressActionButton(title: "외출", tint: Color.goneBrandPrimary) {
-                isShowingLocationShareAlert = true
-            }
-        case .outing:
-            locationPermissionNotice
-            statePanel(title: "외출 중", value: "위치 공유 중", tint: Color.goneStatusOuting, message: "현재 위치가 선도부에게 공유되고 있습니다.")
-            longPressActionButton(title: "복귀", tint: Color.goneStatusReturn) {
-                Task {
-                    await completeReturn(outing)
-                    outing.status = .completed
-                    flowState = .completed
-                }
-            }
-        case .completed:
-            statePanel(title: "복귀 완료", value: "도착", tint: Color.goneBrandPrimary, message: "복귀가 완료되어 위치 공유가 종료되었습니다.")
-        }
-    }
-
-    private func statePanel(title: String, value: String, tint: Color, message: String) -> some View {
-        VStack(spacing: GONESpacing.medium) {
-            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.goneTextSecondary)
-            Text(value).font(.title2.bold()).foregroundStyle(tint)
-            Text(message).font(.caption).foregroundStyle(Color.goneTextSecondary)
-                .multilineTextAlignment(.center)
-            Circle()
-                .fill(tint)
-                .frame(width: 112, height: 112)
-                .overlay(Text(title == "대기 상태" ? "대기" : title == "복귀 완료" ? "완료" : title).font(.title3.bold()).foregroundStyle(.white))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, GONESpacing.medium)
     }
 
     private var locationPermissionNotice: some View {
@@ -721,28 +677,172 @@ private struct StudentOutingDetailView: View {
             .background(Color.goneBrandPrimary, in: RoundedRectangle(cornerRadius: 14))
     }
 
-    private func longPressActionButton(title: String, tint: Color, action: @escaping () -> Void) -> some View {
-        Text(title)
+}
+
+private struct StudentOutingFlowPage: View {
+    let outing: OutingRequest
+    let startOuting: (OutingRequest) async -> Bool
+    let completeReturn: (OutingRequest) async -> Void
+    let locationSharingState: OutingLocationManager.SharingState
+    @State private var state: StudentOutingFlowState
+    @State private var isShowingLocationShareAlert = false
+    @State private var isCharging = false
+    @State private var hapticTimer: Timer?
+
+    init(outing: OutingRequest, initialState: StudentOutingFlowState, startOuting: @escaping (OutingRequest) async -> Bool, completeReturn: @escaping (OutingRequest) async -> Void, locationSharingState: OutingLocationManager.SharingState) {
+        self.outing = outing
+        self.startOuting = startOuting
+        self.completeReturn = completeReturn
+        self.locationSharingState = locationSharingState
+        _state = State(initialValue: initialState)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            stateHeader
+            Spacer(minLength: 80)
+            chargingButton
+            Spacer(minLength: 80)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(Color.goneTextSecondary)
+                .multilineTextAlignment(.center)
+                .lineSpacing(6)
+            Spacer(minLength: 20)
+        }
+        .padding(.horizontal, GONESpacing.screenHorizontal)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.goneScreenBackground.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
+        .task {
+            guard state == .waiting else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            state = .readyToLeave
+        }
+        .alert("위치 공유가 필요해요", isPresented: $isShowingLocationShareAlert) {
+            Button("항상 허용하고 외출") {
+                Task {
+                    if await startOuting(outing) { state = .outing }
+                }
+            }
+            Button("취소", role: .cancel) { }
+        } message: {
+            Text("외출 중에는 선도부가 학생의 이동 경로를 확인할 수 있도록 위치를 항상 공유해야 합니다. 위치 권한에서 ‘항상 허용’을 선택해 주세요.")
+        }
+        .onDisappear { stopHaptics() }
+    }
+
+    private var stateHeader: some View {
+        VStack(spacing: GONESpacing.small) {
+            Text(headerTitle)
+                .font(.title2.bold())
+                .foregroundStyle(Color.goneTextPrimary)
+            Text(headerValue)
+                .font(.system(size: 48, weight: .bold))
+                .foregroundStyle(color)
+        }
+    }
+
+    private var chargingButton: some View {
+        Text(buttonTitle)
             .font(.title3.weight(.bold))
             .foregroundStyle(.white)
-            .frame(width: 112, height: 112)
-            .background(tint, in: Circle())
-            .frame(maxWidth: .infinity)
-            .contentShape(Circle())
-            .onLongPressGesture(minimumDuration: 1.2, maximumDistance: 20) {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                action()
+            .frame(width: 160, height: 160)
+            .background(color, in: Circle())
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(isCharging ? 0.8 : 0), lineWidth: 5)
+                    .scaleEffect(isCharging ? 1.08 : 1)
+                    .animation(.easeInOut(duration: 0.18).repeatForever(autoreverses: true), value: isCharging)
             }
+            .contentShape(Circle())
+            .onLongPressGesture(minimumDuration: 1.2, maximumDistance: 20, pressing: { pressing in
+                if pressing { startHaptics() } else { stopHaptics() }
+            }, perform: performAction)
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("1.2초 동안 길게 눌러 실행합니다.")
     }
 
-    private static func flowState(for status: OutingRequest.Status) -> StudentOutingFlowState {
-        switch status {
-        case .approved: .approved
-        case .outing: .outing
-        case .completed: .completed
-        case .pendingApproval, .rejected: .approved
+    private func performAction() {
+        stopHaptics()
+        switch state {
+        case .readyToLeave:
+            isShowingLocationShareAlert = true
+        case .outing:
+            Task {
+                await completeReturn(outing)
+                state = .completed
+            }
+        default:
+            break
+        }
+    }
+
+    private func startHaptics() {
+        guard !isCharging else { return }
+        isCharging = true
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        hapticTimer = Timer.scheduledTimer(withTimeInterval: 0.22, repeats: true) { _ in
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
+        }
+    }
+
+    private func stopHaptics() {
+        hapticTimer?.invalidate()
+        hapticTimer = nil
+        isCharging = false
+    }
+
+    private var headerTitle: String {
+        switch state {
+        case .waiting: "대기 상태"
+        case .readyToLeave: "복귀 시간"
+        case .outing: "남은 시간"
+        case .returning: "남은 시간"
+        case .completed: "복귀 완료"
+        }
+    }
+
+    private var headerValue: String {
+        switch state {
+        case .waiting: "10분 전"
+        case .readyToLeave: "1시간 30분"
+        case .outing: "30분"
+        case .returning: "5분"
+        case .completed: "도착"
+        }
+    }
+
+    private var buttonTitle: String {
+        switch state {
+        case .waiting: "대기"
+        case .readyToLeave: "외출"
+        case .outing: "외출 중"
+        case .returning: "복귀"
+        case .completed: "완료"
+        }
+    }
+
+    private var message: String {
+        switch state {
+        case .waiting: "잠시 후 외출을 시작할 수 있습니다."
+        case .readyToLeave: "외출을 시작하면 현재 위치와 이동 경로가\n선도부 학생에게 실시간으로 공유됩니다."
+        case .outing: "현재 위치와 이동 경로를\n실시간으로 공유하고 있습니다."
+        case .returning: "복귀 후 버튼을 눌러\n외출을 종료해 주세요."
+        case .completed: "복귀가 완료되어 위치 공유가 종료되었습니다."
+        }
+    }
+
+    private var color: Color {
+        switch state {
+        case .waiting: Color.goneStatusWaiting
+        case .readyToLeave: Color.goneBrandPrimary
+        case .outing: Color.goneStatusOuting
+        case .returning: Color.goneStatusReturn
+        case .completed: Color.goneBrandPrimary
         }
     }
 }
