@@ -15,9 +15,8 @@ struct AppTabView: View {
     @StateObject private var schoolCampingViewModel: SchoolCampingViewModel
     @StateObject private var settingsViewModel: SettingsViewModel
 
-    init(role: AccountRole = .student) {
+    init(role: AccountRole = .student, studentRoles: [String] = ["선도부", "방송부", "iOS 전공동아리"]) {
         self.role = role
-        let studentRoles = ["선도부", "방송부", "iOS 전공동아리"]
         _labReservationViewModel = StateObject(
             wrappedValue: LabReservationViewModel(repository: MockLabReservationRepository())
         )

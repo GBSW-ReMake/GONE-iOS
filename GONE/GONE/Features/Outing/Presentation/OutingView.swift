@@ -95,8 +95,6 @@ private struct LeaderOutingListView: View {
                     }
                 }
 
-                Spacer(minLength: 120)
-                GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: {})
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -104,6 +102,13 @@ private struct LeaderOutingListView: View {
         .navigationTitle("외출")
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.goneScreenBackground.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: {})
+                .padding(.horizontal, GONESpacing.screenHorizontal)
+                .padding(.top, GONESpacing.small)
+                .padding(.bottom, GONESpacing.small)
+                .background(Color.goneScreenBackground)
+        }
         .navigationDestination(item: $selectedOuting) { outing in
             OutingRouteDetailView(outing: outing, viewModel: viewModel)
         }
@@ -253,7 +258,6 @@ private struct StudentOutingListView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture { selectedOuting = outing }
                         }
-                        GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
                     }
                     .padding(.horizontal, GONESpacing.screenHorizontal)
                     .padding(.vertical, GONESpacing.xLarge)
@@ -262,6 +266,15 @@ private struct StudentOutingListView: View {
         }
         .navigationTitle(viewModel.outings.isEmpty ? "" : "외출")
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !viewModel.outings.isEmpty {
+                GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
+                    .padding(.horizontal, GONESpacing.screenHorizontal)
+                    .padding(.top, GONESpacing.small)
+                    .padding(.bottom, GONESpacing.small)
+                    .background(Color.goneScreenBackground)
+            }
+        }
         .navigationDestination(item: $selectedOuting) { outing in
             StudentOutingDetailView(
                 outing: outing,
@@ -952,4 +965,14 @@ private func dateText(_ date: Date) -> String {
 
 private func timeText(_ date: Date) -> String {
     let formatter = DateFormatter(); formatter.locale = Locale(identifier: "ko_KR"); formatter.dateFormat = "a h:mm"; return formatter.string(from: date)
+}
+
+#Preview("선도부 아닌 학생 외출") {
+    OutingView(
+        viewModel: OutingViewModel(
+            role: .student,
+            repository: MockOutingRepository(),
+            hasLeaderRole: false
+        )
+    )
 }
