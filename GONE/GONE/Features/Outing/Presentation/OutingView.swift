@@ -57,39 +57,46 @@ private struct LeaderOutingListView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
-                VStack(alignment: .leading, spacing: GONESpacing.small) {
-                    Text("외출 학생 관리").font(.title2.bold())
-                    Text("외출 중인 학생의 위치와 이동 경로를 확인할 수 있어요.")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.goneTextSecondary)
-                }
+                Text(Date(), format: .dateTime.month().day().weekday(.wide))
+                    .font(.footnote)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Text("외출 학생 관리")
+                    .font(.title.bold())
+                    .foregroundStyle(Color.goneTextPrimary)
 
                 if activeOutings.isEmpty {
                     ContentUnavailableView("외출 중인 학생이 없어요", systemImage: "location.slash", description: Text("학생이 외출을 시작하면 이곳에 표시됩니다."))
                 } else {
                     ForEach(activeOutings) { outing in
                         Button { selectedOuting = outing } label: {
-                            HStack(spacing: GONESpacing.medium) {
-                                ProfileMarker(student: outing.student, size: 44)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("\(outing.student.studentNumber) \(outing.student.name)")
-                                        .font(.headline.weight(.semibold))
-                                        .foregroundStyle(Color.goneTextPrimary)
-                                    Text(outing.status == .completed ? "도착 완료" : "외출 중 · 위치 공유 중")
-                                        .font(.caption)
-                                        .foregroundStyle(outing.status == .completed ? Color.goneTextSecondary : Color.goneBrandPrimary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(Color.goneTextTertiary)
+                            VStack(alignment: .leading, spacing: GONESpacing.small) {
+                                statusBadge(outing.status)
+                                Text(Date(), format: .dateTime.month().day().weekday(.wide))
+                                    .font(.caption)
+                                    .foregroundStyle(Color.goneTextSecondary)
+                                Text("\(outing.student.studentNumber) \(outing.student.name)")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(Color.goneTextPrimary)
+                                Text("오후 12:30 ~ 오후 1:30")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.goneTextPrimary)
+                                Text(outing.reason)
+                                    .font(.caption)
+                                    .foregroundStyle(Color.goneTextSecondary)
+                                Text("담당: \(outing.teacher.name)")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.goneTextSecondary)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(GONESpacing.large)
                             .background(Color.goneSurfacePrimary, in: RoundedRectangle(cornerRadius: 16))
                         }
                         .buttonStyle(.plain)
                     }
                 }
+
+                Spacer(minLength: 120)
+                GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: {})
             }
             .padding(.horizontal, GONESpacing.screenHorizontal)
             .padding(.vertical, GONESpacing.xLarge)
@@ -101,6 +108,16 @@ private struct LeaderOutingListView: View {
             OutingRouteDetailView(outing: outing, viewModel: viewModel)
         }
     }
+
+    private func statusBadge(_ status: OutingRequest.Status) -> some View {
+        let isCompleted = status == .completed
+        return Text(isCompleted ? "복귀 완료" : "외출 중")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(isCompleted ? Color.goneBrandPrimary : Color.goneStatusOuting)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background((isCompleted ? Color.goneBrandPrimary : Color.goneStatusOuting).opacity(0.12), in: Capsule())
+    }
 }
 
 private struct OutingRouteDetailView: View {
@@ -111,29 +128,28 @@ private struct OutingRouteDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: GONESpacing.large) {
-                HStack(spacing: GONESpacing.medium) {
-                    ProfileMarker(student: outing.student, size: 52)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(outing.student.studentNumber) \(outing.student.name)")
-                            .font(.title3.bold())
-                        Text(viewModel.route?.status == .arrived ? "도착" : "외출 중")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(viewModel.route?.status == .arrived ? Color.goneTextSecondary : Color.goneBrandPrimary)
-                    }
-                    Spacer()
-                }
+                detailStatusBadge
+                Text(Date(), format: .dateTime.month().day().weekday(.wide))
+                    .font(.subheadline)
+                    .foregroundStyle(Color.goneTextSecondary)
+                Text("\(outing.student.studentNumber) \(outing.student.name)")
+                    .font(.title3.bold())
+                Text("오후 12:30 ~ 오후 1:30")
+                    .font(.headline)
 
                 if let route = viewModel.route {
+                    Text("이동 경로")
+                        .font(.headline.weight(.bold))
                     routeMap(route)
-                    HStack {
-                        Label(route.status == .arrived ? "복귀 완료 · 도착" : "실시간 위치 공유 중", systemImage: route.status == .arrived ? "checkmark.circle.fill" : "location.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(route.status == .arrived ? Color.goneTextSecondary : Color.goneBrandPrimary)
-                        Spacer()
-                        if let updated = viewModel.lastLocationUpdate {
-                            Text(updated, style: .time).font(.caption).foregroundStyle(Color.goneTextTertiary)
-                        }
-                    }
+                    Text("복귀 알림 예정")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.goneTextSecondary)
+                    Text(route.status == .arrived
+                         ? "학생이 복귀 버튼을 눌러 경로 추적이 종료되었고 선도부에게 복귀 완료 알림이 전송되었습니다."
+                         : "학생이 복귀 버튼을 누르면 경로 추적이 종료되고 선도부에게 복귀 완료 알림이 전송됩니다.")
+                        .font(.caption)
+                        .foregroundStyle(Color.goneTextSecondary)
+                        .lineSpacing(5)
                 } else {
                     ProgressView("경로를 불러오는 중")
                         .frame(maxWidth: .infinity, minHeight: 300)
@@ -147,6 +163,16 @@ private struct OutingRouteDetailView: View {
         .background(Color.goneScreenBackground.ignoresSafeArea())
         .task { await viewModel.loadRoute(for: outing) }
         .onDisappear { viewModel.stopLocationSharing() }
+    }
+
+    private var detailStatusBadge: some View {
+        let isArrived = viewModel.route?.status == .arrived
+        return Text(isArrived ? "복귀 완료" : "외출 중")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(isArrived ? Color.goneBrandPrimary : Color.goneStatusOuting)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background((isArrived ? Color.goneBrandPrimary : Color.goneStatusOuting).opacity(0.12), in: Capsule())
     }
 
     private func routeMap(_ route: OutingRoute) -> some View {

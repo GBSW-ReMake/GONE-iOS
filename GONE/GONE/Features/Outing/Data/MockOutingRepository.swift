@@ -58,15 +58,10 @@ actor MockOutingRepository: OutingRepository {
         let points = samplePoints
         let startedAt = Calendar.current.date(byAdding: .minute, value: -18, to: Date()) ?? Date()
         return AsyncStream { continuation in
-            continuation.yield(OutingRoute(outingID: outing.id, points: Array(points.prefix(2)), startedAt: startedAt, updatedAt: Date(), status: .outing))
-            Task {
-                for count in 3...points.count {
-                    try? await Task.sleep(for: .seconds(3))
-                    guard !Task.isCancelled else { return }
-                    continuation.yield(OutingRoute(outingID: outing.id, points: Array(points.prefix(count)), startedAt: startedAt, updatedAt: Date(), status: .outing))
-                }
-                continuation.finish()
-            }
+            // 실제 서비스에서는 Core Location + 서버 실시간 스트림이 이 자리를 대체한다.
+            // Mock에서는 위치를 임의로 이동시키지 않고 현재 서버에 저장된 경로만 전달한다.
+            continuation.yield(OutingRoute(outingID: outing.id, points: points, startedAt: startedAt, updatedAt: Date(), status: outing.status == .completed ? .arrived : .outing))
+            continuation.finish()
         }
     }
 
