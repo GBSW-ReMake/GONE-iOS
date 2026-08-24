@@ -106,7 +106,7 @@ private struct LeaderOutingListView: View {
             GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: {})
                 .padding(.horizontal, GONESpacing.screenHorizontal)
                 .padding(.top, GONESpacing.small)
-                .padding(.bottom, GONESpacing.small)
+                .padding(.bottom, GONESpacing.medium)
                 .background(Color.goneScreenBackground)
         }
         .navigationDestination(item: $selectedOuting) { outing in
@@ -271,7 +271,7 @@ private struct StudentOutingListView: View {
                 GONEPrimaryButton(title: "외출 신청", isEnabled: true, isLoading: false, action: apply)
                     .padding(.horizontal, GONESpacing.screenHorizontal)
                     .padding(.top, GONESpacing.small)
-                    .padding(.bottom, GONESpacing.small)
+                    .padding(.bottom, GONESpacing.medium)
                     .background(Color.goneScreenBackground)
             }
         }
