@@ -44,7 +44,7 @@ struct HomeView: View {
                     Color.goneHomeBackground.ignoresSafeArea()
                     ProgressView("홈 정보를 불러오는 중")
                         .tint(Color.goneTextSecondary)
-                        .scaleEffect(1.25)
+                        .scaleEffect(1.0)
                 }
             case .loaded(let dashboard):
                 dashboardContent(dashboard)
@@ -57,18 +57,6 @@ struct HomeView: View {
                     Button("다시 시도") { Task { await viewModel.load() } }
                         .buttonStyle(.borderedProminent)
                 }
-            }
-        }
-        .overlay {
-            if viewModel.isRefreshing {
-                ZStack {
-                    Color.white.opacity(0.28)
-                    ProgressView()
-                        .tint(Color.goneTextSecondary)
-                        .scaleEffect(1.45)
-                }
-                .background(.ultraThinMaterial.opacity(0.32))
-                .ignoresSafeArea()
             }
         }
         .refreshable { await viewModel.refresh() }
