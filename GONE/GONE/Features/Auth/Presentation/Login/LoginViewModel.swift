@@ -30,9 +30,13 @@ final class LoginViewModel: ObservableObject {
     @Published private(set) var identifierErrorMessage: String?
     @Published private(set) var passwordErrorMessage: String?
     @Published private(set) var loginErrorMessage: String?
+    @Published private(set) var isLoading = false
 
-    init(role: AccountRole = .student) {
+    private let loginUseCase: LoginUseCase?
+
+    init(role: AccountRole = .student, loginUseCase: LoginUseCase? = nil) {
         self.role = role
+        self.loginUseCase = loginUseCase
     }
 
     var isLoginEnabled: Bool {
@@ -55,5 +59,25 @@ final class LoginViewModel: ObservableObject {
 
     func showServiceUnavailableMessage() {
         loginErrorMessage = "로그인 서비스 연결 정보를 확인 중입니다. 잠시 후 다시 시도해주세요."
+    }
+
+    func login(with credentials: LoginCredentials) async throws {
+        guard let loginUseCase else {
+            showServiceUnavailableMessage()
+            return
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            try await loginUseCase.execute(with: credentials)
+        } catch let error as APIError {
+            loginErrorMessage = error.localizedDescription
+            throw error
+        } catch {
+            loginErrorMessage = "로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+            throw error
+        }
     }
 }

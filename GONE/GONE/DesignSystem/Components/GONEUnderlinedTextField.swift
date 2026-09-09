@@ -106,15 +106,6 @@ struct GONEUnderlinedTextField: View {
                             .padding(.horizontal, GONESpacing.medium)
                             .frame(minHeight: 36)
                             .background(Color.white, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .stroke(
-                                        isTrailingActionEnabled
-                                            ? Color.goneBrandPrimary
-                                            : Color.goneBorderDefault,
-                                        lineWidth: 1
-                                    )
-                            }
                     }
                     .buttonStyle(.plain)
                     .frame(minHeight: 44)

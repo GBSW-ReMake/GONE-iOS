@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BC47EE85305123C000B56F44 /* Moya in Frameworks */ = {isa = PBXBuildFile; productRef = A36M0YA0000000000000001 /* Moya */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		BCC0584230206C03004E9939 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC47EE85305123C000B56F44 /* Moya in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = GONE;
 			packageProductDependencies = (
+				A36M0YA0000000000000001 /* Moya */,
 			);
 			productName = GONE;
 			productReference = BCC0583430206C01004E9939 /* GONE.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = BCC0582B30206C01004E9939;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A36M0YB0000000000000001 /* XCRemoteSwiftPackageReference "Moya" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BCC0583530206C01004E9939 /* Products */;
 			projectDirPath = "";
@@ -400,11 +409,11 @@
 				DEVELOPMENT_TEAM = QLF22M2925;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "외출 중 선도부에게 현재 위치를 공유하기 위해 위치 권한이 필요합니다.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "외출 중 경로를 계속 공유하기 위해 위치 권한이 필요합니다.";
-				INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "외출 중 선도부에게 현재 위치를 공유하기 위해 위치 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = location;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -435,11 +444,11 @@
 				DEVELOPMENT_TEAM = QLF22M2925;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "외출 중 선도부에게 현재 위치를 공유하기 위해 위치 권한이 필요합니다.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "외출 중 경로를 계속 공유하기 위해 위치 권한이 필요합니다.";
-				INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "외출 중 선도부에게 현재 위치를 공유하기 위해 위치 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = location;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -584,6 +593,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A36M0YB0000000000000001 /* XCRemoteSwiftPackageReference "Moya" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Moya/Moya.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 15.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A36M0YA0000000000000001 /* Moya */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A36M0YB0000000000000001 /* XCRemoteSwiftPackageReference "Moya" */;
+			productName = Moya;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BCC0582C30206C01004E9939 /* Project object */;
 }

@@ -87,6 +87,26 @@ final class SignupViewModel: ObservableObject {
     @Published private(set) var profileImageErrorMessage: String?
     @Published private(set) var serviceErrorMessage: String?
     @Published private(set) var isVerificationRequested = false
+    @Published private(set) var isSendingVerificationCode = false
+    @Published private(set) var isSigningUp = false
+    @Published private(set) var verificationCooldownRemaining = 0
+    @Published private(set) var verificationCodeRemaining = 0
+    @Published private(set) var verificationFailedAttempts = 0
+
+    private let signupUseCase: SignupUseCase?
+    private var verificationTimerTask: Task<Void, Never>?
+    private var initialServerName: String?
+
+    private enum VerificationPolicy {
+        static let codeTTL = 5 * 60
+        static let resendCooldown = 30
+        static let maxFailedAttempts = 5
+        static let signupTicketTTL = 10 * 60
+    }
+
+    init(signupUseCase: SignupUseCase? = nil) {
+        self.signupUseCase = signupUseCase
+    }
 
     var isPrimaryActionEnabled: Bool {
         switch currentStep {
@@ -95,7 +115,10 @@ final class SignupViewModel: ObservableObject {
         case .password:
             !password.isEmpty && password == passwordConfirmation
         case .phoneVerification:
-            isValidPhoneNumber && !verificationCode.isEmpty
+            isValidPhoneNumber
+                && !verificationCode.isEmpty
+                && verificationCodeRemaining > 0
+                && verificationFailedAttempts < VerificationPolicy.maxFailedAttempts
         case .studentInformation:
             !trimmedStudentNumber.isEmpty && !trimmedName.isEmpty
         case .profileImage:
@@ -104,7 +127,21 @@ final class SignupViewModel: ObservableObject {
     }
 
     var isVerificationRequestEnabled: Bool {
-        isValidPhoneNumber
+        isValidPhoneNumber && verificationCooldownRemaining == 0 && !isSendingVerificationCode
+    }
+
+    var verificationCodeExpiryText: String? {
+        guard verificationCodeRemaining > 0 else { return nil }
+        let minutes = verificationCodeRemaining / 60
+        let seconds = verificationCodeRemaining % 60
+        return String(format: "인증번호 유효시간 %d:%02d", minutes, seconds)
+    }
+
+    var verificationButtonTitle: String {
+        if verificationCooldownRemaining > 0 {
+            return "\(verificationCooldownRemaining)초 후 재발급"
+        }
+        return isVerificationRequested ? "재발급 받기" : "인증번호 받기"
     }
 
     var progressAccessibilityLabel: String {
@@ -123,12 +160,71 @@ final class SignupViewModel: ObservableObject {
             currentStep = .phoneVerification
         case .phoneVerification:
             guard validatePhoneVerification() else { return }
-            currentStep = .studentInformation
+            guard let signupUseCase else {
+                // UI 단위 테스트와 오프라인 프리뷰에서는 단계 전환만 허용합니다.
+                currentStep = .studentInformation
+                return
+            }
+            guard !isSigningUp,
+                  verificationCodeRemaining > 0,
+                  verificationFailedAttempts < VerificationPolicy.maxFailedAttempts else { return }
+
+            isSigningUp = true
+            Task {
+                let ticket: String
+                do {
+                    ticket = try await signupUseCase.verifyPhoneCode(
+                        verificationCode,
+                        for: normalizedPhoneNumber
+                    )
+                } catch {
+                    verificationFailedAttempts += 1
+                    serviceErrorMessage = Self.message(for: error)
+                    isSigningUp = false
+                    return
+                }
+
+                do {
+                    try await signupUseCase.signup(with: SignupRequest(
+                        identifier: trimmedIdentifier,
+                        password: password,
+                        phoneNumber: normalizedPhoneNumber,
+                        ticket: ticket
+                    ))
+                    currentStep = .studentInformation
+                    do {
+                        let profile = try await signupUseCase.fetchMyProfile()
+                        initialServerName = profile.name
+                        name = profile.name
+                    } catch {
+                        serviceErrorMessage = Self.message(for: error)
+                    }
+                } catch {
+                    serviceErrorMessage = Self.message(for: error)
+                }
+                isSigningUp = false
+            }
         case .studentInformation:
             guard validateStudentInformation() else { return }
-            currentStep = .profileImage
+            guard let signupUseCase, name != initialServerName else {
+                currentStep = .profileImage
+                return
+            }
+            guard !isSigningUp else { return }
+
+            isSigningUp = true
+            Task {
+                do {
+                    try await signupUseCase.updateName(trimmedName)
+                    initialServerName = trimmedName
+                    currentStep = .profileImage
+                } catch {
+                    serviceErrorMessage = Self.message(for: error)
+                }
+                isSigningUp = false
+            }
         case .profileImage:
-            serviceErrorMessage = "회원가입 서비스 연결 정보를 확인 중입니다. 잠시 후 다시 시도해주세요."
+            finishProfile()
         }
     }
 
@@ -141,13 +237,41 @@ final class SignupViewModel: ObservableObject {
     func requestVerificationCode() {
         guard validatePhoneNumber() else { return }
 
-        isVerificationRequested = true
+        guard let signupUseCase else {
+            serviceErrorMessage = "인증번호 발송 서비스 연결 정보를 확인 중입니다."
+            return
+        }
+        guard !isSendingVerificationCode else { return }
+
+        isSendingVerificationCode = true
         verificationErrorMessage = nil
-        serviceErrorMessage = "인증번호 발송 API 연결 정보를 확인 중입니다."
+        serviceErrorMessage = nil
+
+        Task {
+            do {
+                _ = try await signupUseCase.requestPhoneVerificationCode(for: normalizedPhoneNumber)
+                isVerificationRequested = true
+                verificationFailedAttempts = 0
+                startVerificationTimer()
+            } catch {
+                serviceErrorMessage = Self.message(for: error)
+            }
+            isSendingVerificationCode = false
+        }
     }
 
     func updatePhoneNumber(_ value: String) {
-        phoneNumber = Self.formattedPhoneNumber(value)
+        let formattedPhoneNumber = Self.formattedPhoneNumber(value)
+        if formattedPhoneNumber != phoneNumber {
+            verificationTimerTask?.cancel()
+            verificationTimerTask = nil
+            verificationCode = ""
+            isVerificationRequested = false
+            verificationCooldownRemaining = 0
+            verificationCodeRemaining = 0
+            verificationFailedAttempts = 0
+        }
+        phoneNumber = formattedPhoneNumber
         phoneErrorMessage = nil
     }
 
@@ -158,6 +282,28 @@ final class SignupViewModel: ObservableObject {
 
     func reportProfileImageLoadingFailure() {
         profileImageErrorMessage = "프로필 사진을 불러오지 못했어요. 사진 없이 계속할 수 있습니다."
+    }
+
+    func finishProfile(completion: @escaping () -> Void = {}) {
+        guard !isSigningUp else { return }
+        guard let signupUseCase else {
+            completion()
+            return
+        }
+
+        isSigningUp = true
+        serviceErrorMessage = nil
+        Task {
+            do {
+                if let profileImageData {
+                    try await signupUseCase.uploadProfileImage(profileImageData)
+                }
+                completion()
+            } catch {
+                serviceErrorMessage = Self.message(for: error)
+            }
+            isSigningUp = false
+        }
     }
 
     private var trimmedIdentifier: String {
@@ -175,6 +321,17 @@ final class SignupViewModel: ObservableObject {
     private var isValidPhoneNumber: Bool {
         let digits = phoneNumber.filter(\.isNumber)
         return (10...11).contains(digits.count)
+    }
+
+    private var normalizedPhoneNumber: String {
+        phoneNumber.filter(\.isNumber)
+    }
+
+    private static func message(for error: Error) -> String {
+        if let apiError = error as? APIError {
+            return apiError.localizedDescription
+        }
+        return "요청 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
     }
 
     private func validateIdentifier() -> Bool {
@@ -223,5 +380,29 @@ final class SignupViewModel: ObservableObject {
         default:
             "\(digits.prefix(3))-\(digits.dropFirst(3).prefix(4))-\(digits.dropFirst(7))"
         }
+    }
+
+    private func startVerificationTimer() {
+        verificationTimerTask?.cancel()
+        verificationCooldownRemaining = VerificationPolicy.resendCooldown
+        verificationCodeRemaining = VerificationPolicy.codeTTL
+
+        verificationTimerTask = Task { @MainActor [weak self] in
+            while let self, !Task.isCancelled,
+                  self.verificationCooldownRemaining > 0 || self.verificationCodeRemaining > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                if self.verificationCooldownRemaining > 0 {
+                    self.verificationCooldownRemaining -= 1
+                }
+                if self.verificationCodeRemaining > 0 {
+                    self.verificationCodeRemaining -= 1
+                }
+            }
+        }
+    }
+
+    deinit {
+        verificationTimerTask?.cancel()
     }
 }

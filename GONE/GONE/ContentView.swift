@@ -18,6 +18,15 @@ struct ContentView: View {
 
     @State private var destination: Destination = .splash
 
+    private let loginUseCase = LoginUseCase(
+        repository: RemoteAuthRepository(client: MoyaAPIClient()),
+        sessionStore: KeychainSessionStore()
+    )
+    private let signupUseCase = SignupUseCase(
+        repository: RemoteAuthRepository(client: MoyaAPIClient()),
+        sessionStore: KeychainSessionStore()
+    )
+
     var body: some View {
         ZStack {
             switch destination {
@@ -30,13 +39,18 @@ struct ContentView: View {
             case .login(let role):
                 LoginView(
                     role: role,
+                    loginUseCase: loginUseCase,
                     onLogin: { credentials in transition(to: .home(credentials.role)) },
                     onSignUpTapped: { transition(to: .signup(role)) },
                     onBackTapped: { transition(to: .roleSelection) }
                 )
                 .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
             case .signup(let role):
-                SignupView(onDismiss: { transition(to: .login(role)) })
+                SignupView(
+                    signupUseCase: signupUseCase,
+                    onDismiss: { transition(to: .login(role)) },
+                    onSignupCompleted: { transition(to: .home(role)) }
+                )
                     .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity)))
             case .home(let role):
                 AppTabView(role: role)
