@@ -137,9 +137,11 @@ final class SignupViewModel: ObservableObject {
         return String(format: "인증번호 유효시간 %d:%02d", minutes, seconds)
     }
 
-    var verificationCooldownText: String? {
-        guard verificationCooldownRemaining > 0 else { return nil }
-        return "\(verificationCooldownRemaining)초 후 재발송할 수 있어요."
+    var verificationButtonTitle: String {
+        if verificationCooldownRemaining > 0 {
+            return "\(verificationCooldownRemaining)초 후 재발급"
+        }
+        return isVerificationRequested ? "재발급 받기" : "인증번호 받기"
     }
 
     var progressAccessibilityLabel: String {

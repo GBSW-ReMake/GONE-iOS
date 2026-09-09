@@ -183,16 +183,10 @@ struct SignupView: View {
                     textContentType: .telephoneNumber,
                     keyboardType: .phonePad,
                     errorMessage: viewModel.phoneErrorMessage,
-                    trailingActionTitle: "인증번호 받기",
+                    trailingActionTitle: viewModel.verificationButtonTitle,
                     isTrailingActionEnabled: viewModel.isVerificationRequestEnabled,
                     trailingAction: viewModel.requestVerificationCode
                 )
-
-                if let verificationCooldownText = viewModel.verificationCooldownText {
-                    Text(verificationCooldownText)
-                        .font(GONEFont.sfPro(size: 13))
-                        .foregroundStyle(Color.goneTextTertiary)
-                }
 
                 GONEUnderlinedTextField(
                     title: "인증번호",
