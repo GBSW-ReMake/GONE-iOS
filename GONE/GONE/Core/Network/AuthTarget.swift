@@ -7,8 +7,7 @@ enum AuthTarget: TargetType {
     case signup(SignupRequestDTO)
 
     var baseURL: URL {
-        // 서버 base URL 확정 후 AppDependencies에서 주입하는 방식으로 교체합니다.
-        URL(string: "http://localhost:8080")!
+        APIConfiguration.baseURL
     }
 
     var path: String {
