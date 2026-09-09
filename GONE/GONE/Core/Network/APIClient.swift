@@ -31,7 +31,7 @@ nonisolated final class MoyaAPIClient: APIClient {
                     guard (200..<300).contains(response.statusCode) else {
                         continuation.resume(throwing: APIError.server(
                             statusCode: response.statusCode,
-                            message: nil
+                            message: Self.serverMessage(from: response.data)
                         ))
                         return
                     }
@@ -47,5 +47,30 @@ nonisolated final class MoyaAPIClient: APIClient {
         } catch {
             throw APIError.decoding
         }
+    }
+
+    private static func serverMessage(from data: Data) -> String? {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: data),
+            let dictionary = object as? [String: Any]
+        else {
+            return nil
+        }
+
+        let keys = ["message", "error", "detail", "reason"]
+        for key in keys {
+            if let message = dictionary[key] as? String, !message.isEmpty {
+                return message
+            }
+        }
+
+        for key in ["data", "result", "errorResponse"] {
+            if let nested = dictionary[key] as? [String: Any],
+               let message = serverMessage(from: (try? JSONSerialization.data(withJSONObject: nested)) ?? Data()) {
+                return message
+            }
+        }
+
+        return nil
     }
 }
