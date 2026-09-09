@@ -17,11 +17,11 @@ Notion의 `API 명세서`에서 확인한 인증 endpoint는 다음과 같습니
 
 | 기능 | Method | Path | 확인 상태 |
 |---|---|---|---|
-| 로그인 | POST | `/api/auth/login` | endpoint 확인 |
+| 로그인 | POST | `/api/v1/auth/login` | 개발 서버 확인 |
 | 로그아웃 | POST | `/api/auth/logout` | 후속 범위 |
 | 토큰 갱신 | POST | `/api/auth/refresh` | 후속 범위 |
 | FCM 토큰 등록 | PATCH | `/api/auth/fcm-token` | 후속 범위 |
-| 회원가입 | 미확인 | 미확인 | 상세 페이지 본문 비어 있음 |
+| 회원가입 | POST | `/api/v1/auth/signup` | 개발 서버 확인 |
 
 서버 포트는 `8080`으로 기재되어 있으나 IP/base URL은 `?`로 되어 있습니다. 로그인·회원가입 요청/응답 필드와 회원가입 endpoint도 현재 명세에서 확인되지 않습니다.
 

@@ -13,9 +13,9 @@ enum AuthTarget: TargetType {
     var path: String {
         switch self {
         case .login:
-            "/api/auth/login"
+            "/api/v1/auth/login"
         case .signup:
-            "/api/auth/signup"
+            "/api/v1/auth/signup"
         }
     }
 

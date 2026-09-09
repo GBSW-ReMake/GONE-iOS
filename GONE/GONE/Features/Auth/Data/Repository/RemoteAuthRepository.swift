@@ -10,29 +10,36 @@ final class RemoteAuthRepository: AuthRepository {
     func login(with credentials: LoginCredentials) async throws -> AuthSession {
         let request = LoginRequestDTO(
             identifier: credentials.identifier,
-            password: credentials.password,
-            role: credentials.role.rawValue
+            password: credentials.password
         )
-        let response: AuthResponseDTO = try await client.request(
+        let envelope: APIResponseDTO<AuthResponseDTO> = try await client.request(
             AuthTarget.login(request),
-            responseType: AuthResponseDTO.self
+            responseType: APIResponseDTO<AuthResponseDTO>.self
         )
+        guard envelope.success else {
+            throw APIError.server(statusCode: 400, message: envelope.message)
+        }
+        guard let response = envelope.data else { throw APIError.decoding }
         return AuthSession(accessToken: response.accessToken, refreshToken: response.refreshToken)
     }
 
     func signup(with request: SignupRequest) async throws -> AuthSession {
         let dto = SignupRequestDTO(
-            identifier: request.identifier,
+            loginId: request.identifier,
             password: request.password,
+            ticket: request.verificationCode,
             phoneNumber: request.phoneNumber,
-            verificationCode: request.verificationCode,
             studentNumber: request.studentNumber,
             name: request.name
         )
-        let response: AuthResponseDTO = try await client.request(
+        let envelope: APIResponseDTO<AuthResponseDTO> = try await client.request(
             AuthTarget.signup(dto),
-            responseType: AuthResponseDTO.self
+            responseType: APIResponseDTO<AuthResponseDTO>.self
         )
+        guard envelope.success else {
+            throw APIError.server(statusCode: 400, message: envelope.message)
+        }
+        guard let response = envelope.data else { throw APIError.decoding }
         return AuthSession(accessToken: response.accessToken, refreshToken: response.refreshToken)
     }
 }
