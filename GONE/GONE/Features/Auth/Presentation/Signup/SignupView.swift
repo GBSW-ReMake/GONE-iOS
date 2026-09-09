@@ -185,6 +185,12 @@ struct SignupView: View {
                     trailingAction: viewModel.requestVerificationCode
                 )
 
+                if let verificationCooldownText = viewModel.verificationCooldownText {
+                    Text(verificationCooldownText)
+                        .font(GONEFont.sfPro(size: 13))
+                        .foregroundStyle(Color.goneTextTertiary)
+                }
+
                 GONEUnderlinedTextField(
                     title: "인증번호",
                     placeholder: "인증번호를 입력해주세요",
@@ -193,6 +199,12 @@ struct SignupView: View {
                     keyboardType: .numberPad,
                     errorMessage: viewModel.verificationErrorMessage
                 )
+
+                if let verificationCodeExpiryText = viewModel.verificationCodeExpiryText {
+                    Text(verificationCodeExpiryText)
+                        .font(GONEFont.sfPro(size: 13))
+                        .foregroundStyle(Color.goneTextTertiary)
+                }
 
             }
         case .studentInformation:
