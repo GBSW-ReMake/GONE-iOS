@@ -48,7 +48,8 @@ struct ContentView: View {
             case .signup(let role):
                 SignupView(
                     signupUseCase: signupUseCase,
-                    onDismiss: { transition(to: .login(role)) }
+                    onDismiss: { transition(to: .login(role)) },
+                    onSignupCompleted: { transition(to: .home(role)) }
                 )
                     .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity)))
             case .home(let role):

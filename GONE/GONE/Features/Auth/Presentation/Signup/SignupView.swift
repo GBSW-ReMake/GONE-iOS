@@ -15,13 +15,16 @@ struct SignupView: View {
     @State private var isProfileImageLoading = false
 
     let onDismiss: () -> Void
+    let onSignupCompleted: () -> Void
 
     init(
         signupUseCase: SignupUseCase? = nil,
-        onDismiss: @escaping () -> Void = {}
+        onDismiss: @escaping () -> Void = {},
+        onSignupCompleted: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: SignupViewModel(signupUseCase: signupUseCase))
         self.onDismiss = onDismiss
+        self.onSignupCompleted = onSignupCompleted
     }
 
     var body: some View {
@@ -310,6 +313,10 @@ struct SignupView: View {
     }
 
     private func handlePrimaryAction() {
+        if viewModel.currentStep == .profileImage {
+            viewModel.finishProfile(completion: onSignupCompleted)
+            return
+        }
         withAnimation(.snappy(duration: 0.28)) {
             viewModel.proceed()
         }
@@ -321,7 +328,13 @@ struct SignupView: View {
         defer { isProfileImageLoading = false }
 
         do {
-            viewModel.updateProfileImage(data: try await item.loadTransferable(type: Data.self))
+            let sourceData = try await item.loadTransferable(type: Data.self)
+            guard let sourceData,
+                  let image = UIImage(data: sourceData),
+                  let jpegData = image.jpegData(compressionQuality: 0.85) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            viewModel.updateProfileImage(data: jpegData)
         } catch {
             viewModel.reportProfileImageLoadingFailure()
         }

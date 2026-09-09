@@ -30,6 +30,22 @@ struct PhoneVerifyCodeResponseDTO: Decodable {
     let expiresIn: Int
 }
 
+struct UpdateNameRequestDTO: Encodable { let name: String }
+struct MyProfileResponseDTO: Decodable {
+    let name: String
+    let hasProfileImage: Bool
+}
+struct ImageUploadURLRequestDTO: Encodable {
+    let fileName: String
+    let contentType: String
+    let fileSize: Int
+}
+struct ImageUploadURLResponseDTO: Decodable {
+    let uploadUrl: String
+    let key: String
+}
+struct ProfileImageConfirmRequestDTO: Encodable { let key: String }
+
 struct AuthResponseDTO: Decodable {
     let accessToken: String
     let refreshToken: String?
@@ -46,3 +62,5 @@ struct APIResponseDTO<Data: Decodable>: Decodable {
     let message: String?
     let code: String?
 }
+
+struct EmptyResponseDTO: Decodable {}

@@ -95,6 +95,7 @@ final class SignupViewModel: ObservableObject {
 
     private let signupUseCase: SignupUseCase?
     private var verificationTimerTask: Task<Void, Never>?
+    private var initialServerName: String?
 
     private enum VerificationPolicy {
         static let codeTTL = 5 * 60
@@ -189,6 +190,13 @@ final class SignupViewModel: ObservableObject {
                         ticket: ticket
                     ))
                     currentStep = .studentInformation
+                    do {
+                        let profile = try await signupUseCase.fetchMyProfile()
+                        initialServerName = profile.name
+                        name = profile.name
+                    } catch {
+                        serviceErrorMessage = Self.message(for: error)
+                    }
                 } catch {
                     serviceErrorMessage = Self.message(for: error)
                 }
@@ -196,9 +204,25 @@ final class SignupViewModel: ObservableObject {
             }
         case .studentInformation:
             guard validateStudentInformation() else { return }
-            currentStep = .profileImage
+            guard let signupUseCase, name != initialServerName else {
+                currentStep = .profileImage
+                return
+            }
+            guard !isSigningUp else { return }
+
+            isSigningUp = true
+            Task {
+                do {
+                    try await signupUseCase.updateName(trimmedName)
+                    initialServerName = trimmedName
+                    currentStep = .profileImage
+                } catch {
+                    serviceErrorMessage = Self.message(for: error)
+                }
+                isSigningUp = false
+            }
         case .profileImage:
-            serviceErrorMessage = "회원가입 서비스 연결 정보를 확인 중입니다. 잠시 후 다시 시도해주세요."
+            finishProfile()
         }
     }
 
@@ -256,6 +280,28 @@ final class SignupViewModel: ObservableObject {
 
     func reportProfileImageLoadingFailure() {
         profileImageErrorMessage = "프로필 사진을 불러오지 못했어요. 사진 없이 계속할 수 있습니다."
+    }
+
+    func finishProfile(completion: @escaping () -> Void = {}) {
+        guard !isSigningUp else { return }
+        guard let signupUseCase else {
+            completion()
+            return
+        }
+
+        isSigningUp = true
+        serviceErrorMessage = nil
+        Task {
+            do {
+                if let profileImageData {
+                    try await signupUseCase.uploadProfileImage(profileImageData)
+                }
+                completion()
+            } catch {
+                serviceErrorMessage = Self.message(for: error)
+            }
+            isSigningUp = false
+        }
     }
 
     private var trimmedIdentifier: String {

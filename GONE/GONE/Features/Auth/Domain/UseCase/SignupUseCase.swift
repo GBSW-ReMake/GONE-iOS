@@ -21,4 +21,16 @@ struct SignupUseCase {
         let session = try await repository.signup(with: request)
         try sessionStore.save(session)
     }
+
+    func fetchMyProfile() async throws -> MyProfileResponseDTO {
+        try await repository.fetchMyProfile()
+    }
+
+    func updateName(_ name: String) async throws {
+        try await repository.updateName(name)
+    }
+
+    func uploadProfileImage(_ data: Data) async throws {
+        try await repository.uploadProfileImage(data)
+    }
 }
