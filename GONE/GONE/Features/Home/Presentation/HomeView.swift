@@ -40,7 +40,12 @@ struct HomeView: View {
         Group {
             switch viewModel.state {
             case .loading:
-                ProgressView("홈 정보를 불러오는 중")
+                ZStack {
+                    Color.goneHomeBackground.ignoresSafeArea()
+                    ProgressView("홈 정보를 불러오는 중")
+                        .tint(Color.goneTextSecondary)
+                        .scaleEffect(1.0)
+                }
             case .loaded(let dashboard):
                 dashboardContent(dashboard)
             case .failed:
@@ -54,6 +59,7 @@ struct HomeView: View {
                 }
             }
         }
+        .refreshable { await viewModel.refresh() }
         .task { await viewModel.load() }
     }
 
@@ -223,6 +229,11 @@ private struct AcademicScheduleSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
             HStack(spacing: GONESpacing.small) {
+                Image("HomeScheduleIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
                 Text("학사일정")
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.goneTextPrimary)
@@ -341,9 +352,20 @@ private struct SchedulePager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             HStack {
-                Text("오늘 시간표").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                HStack(spacing: GONESpacing.small) {
+                    Image("HomeTimetableIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .accessibilityHidden(true)
+                    Text("오늘 시간표")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.goneTextPrimary)
+                }
                 Spacer()
-                Text("\(selectedPeriod + 1) / \(schedule.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
+                Text(schedule.isEmpty ? "0 / 0" : "\(selectedPeriod + 1) / \(schedule.count)")
+                    .font(.caption)
+                    .foregroundStyle(Color.goneTextSecondary)
             }
             if !schedule.isEmpty {
                 let item = schedule[selectedPeriod]
@@ -372,16 +394,22 @@ private struct SchedulePager: View {
                     .accessibilityElement(children: .combine)
                     .id(selectedPeriod)
                     .transition(cardTransition)
-                    .highPriorityGesture(horizontalPagingGesture)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .simultaneousGesture(horizontalPagingGesture)
         .animation(.snappy(duration: 0.28), value: selectedPeriod)
+        .onChange(of: schedule.count) { _, count in
+            selectedPeriod = max(0, min(selectedPeriod, count - 1))
+        }
         .accessibilityLabel("오늘 시간표. 좌우로 넘겨 다음 교시를 확인하세요.")
     }
 
     private var horizontalPagingGesture: some Gesture {
-        DragGesture(minimumDistance: 24).onEnded { value in
+        DragGesture(minimumDistance: 16).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
             if value.translation.width < -30, selectedPeriod < schedule.count - 1 {
                 movesForward = true
                 withAnimation(.snappy) { selectedPeriod += 1 }
@@ -411,9 +439,20 @@ private struct MealPager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             HStack {
-                Text("오늘 급식").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                HStack(spacing: GONESpacing.small) {
+                    Image("HomeMealIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .accessibilityHidden(true)
+                    Text("오늘 급식")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.goneTextPrimary)
+                }
                 Spacer()
-                Text("\(selectedMeal + 1) / \(meals.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
+                Text(meals.isEmpty ? "0 / 0" : "\(selectedMeal + 1) / \(meals.count)")
+                    .font(.caption)
+                    .foregroundStyle(Color.goneTextSecondary)
             }
             if !meals.isEmpty {
                 mealCard(meals[selectedMeal])
@@ -422,6 +461,9 @@ private struct MealPager: View {
             }
         }
         .animation(.snappy(duration: 0.28), value: selectedMeal)
+        .onChange(of: meals.count) { _, count in
+            selectedMeal = max(0, min(selectedMeal, count - 1))
+        }
     }
 
     private func mealCard(_ meal: Meal) -> some View {
@@ -442,7 +484,8 @@ private struct MealPager: View {
                 Text(meal.calories).font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
         }
-        .highPriorityGesture(DragGesture(minimumDistance: 24).onEnded { value in
+        .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
             if value.translation.width < -30, selectedMeal < meals.count - 1 {
                 movesForward = true
                 withAnimation(.snappy) { selectedMeal += 1 }
@@ -483,7 +526,16 @@ private struct RequestStatusSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
-            Text("신청현황").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+            HStack(spacing: GONESpacing.small) {
+                Image("HomeRequestIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
+                Text("신청현황")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.goneTextPrimary)
+            }
             ForEach(requests) { request in
                 let displayRequest = requestForDisplay(request)
                 Button {
