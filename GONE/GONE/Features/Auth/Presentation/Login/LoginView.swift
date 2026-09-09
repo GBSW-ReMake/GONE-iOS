@@ -16,11 +16,12 @@ struct LoginView: View {
 
     init(
         role: AccountRole = .student,
+        loginUseCase: LoginUseCase? = nil,
         onLogin: ((LoginCredentials) -> Void)? = nil,
         onSignUpTapped: @escaping () -> Void = {},
         onBackTapped: @escaping () -> Void = {}
     ) {
-        _viewModel = StateObject(wrappedValue: LoginViewModel(role: role))
+        _viewModel = StateObject(wrappedValue: LoginViewModel(role: role, loginUseCase: loginUseCase))
         self.onLogin = onLogin
         self.onSignUpTapped = onSignUpTapped
         self.onBackTapped = onBackTapped
@@ -53,7 +54,7 @@ struct LoginView: View {
             GONEPrimaryButton(
                 title: "로그인",
                 isEnabled: viewModel.isLoginEnabled,
-                isLoading: false,
+                isLoading: viewModel.isLoading,
                 action: submit
             )
             .padding(.horizontal, GONESpacing.screenHorizontal)
@@ -155,7 +156,16 @@ struct LoginView: View {
             return
         }
 
-        onLogin(credentials)
+        guard !viewModel.isLoading else { return }
+
+        Task {
+            do {
+                try await viewModel.login(with: credentials)
+                onLogin(credentials)
+            } catch {
+                // ViewModel이 사용자에게 표시할 오류 메시지를 관리합니다.
+            }
+        }
     }
 }
 
