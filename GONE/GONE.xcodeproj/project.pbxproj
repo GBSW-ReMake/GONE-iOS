@@ -112,6 +112,7 @@
 			);
 			name = GONE;
 			packageProductDependencies = (
+				A36M0YA0000000000000001 /* Moya */,
 			);
 			productName = GONE;
 			productReference = BCC0583430206C01004E9939 /* GONE.app */;
@@ -194,6 +195,9 @@
 				Base,
 			);
 			mainGroup = BCC0582B30206C01004E9939;
+			packageReferences = (
+				A36M0YB0000000000000001 /* XCRemoteSwiftPackageReference "Moya" */,
+			);
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BCC0583530206C01004E9939 /* Products */;
@@ -545,6 +549,25 @@
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A36M0YA0000000000000001 /* Moya */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A36M0YB0000000000000001 /* XCRemoteSwiftPackageReference "Moya" */;
+			productName = Moya;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A36M0YB0000000000000001 /* XCRemoteSwiftPackageReference "Moya" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Moya/Moya.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 15.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCConfigurationList section */
 		BCC0582F30206C01004E9939 /* Build configuration list for PBXProject "GONE" */ = {
