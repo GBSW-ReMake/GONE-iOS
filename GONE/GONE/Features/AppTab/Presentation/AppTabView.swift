@@ -53,7 +53,14 @@ struct AppTabView: View {
         TabView(selection: animatedSelection) {
             NavigationStack {
                 HomeView(
-                    viewModel: HomeViewModel(fetchDashboard: FetchHomeDashboardUseCase(repository: MockHomeDashboardRepository())),
+                    viewModel: HomeViewModel(
+                        fetchDashboard: FetchHomeDashboardUseCase(
+                            repository: RemoteHomeDashboardRepository(
+                                client: MoyaAPIClient(),
+                                sessionStore: KeychainSessionStore()
+                            )
+                        )
+                    ),
                     role: role,
                     unreadNotificationCount: notificationViewModel.unreadCount,
                     labReservation: labReservationViewModel.reservation,
