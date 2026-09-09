@@ -22,6 +22,10 @@ struct ContentView: View {
         repository: RemoteAuthRepository(client: MoyaAPIClient()),
         sessionStore: KeychainSessionStore()
     )
+    private let signupUseCase = SignupUseCase(
+        repository: RemoteAuthRepository(client: MoyaAPIClient()),
+        sessionStore: KeychainSessionStore()
+    )
 
     var body: some View {
         ZStack {
@@ -42,7 +46,10 @@ struct ContentView: View {
                 )
                 .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
             case .signup(let role):
-                SignupView(onDismiss: { transition(to: .login(role)) })
+                SignupView(
+                    signupUseCase: signupUseCase,
+                    onDismiss: { transition(to: .login(role)) }
+                )
                     .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .trailing).combined(with: .opacity)))
             case .home(let role):
                 AppTabView(role: role)

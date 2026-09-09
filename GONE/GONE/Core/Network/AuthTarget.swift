@@ -5,6 +5,8 @@ import Moya
 enum AuthTarget: TargetType {
     case login(LoginRequestDTO)
     case signup(SignupRequestDTO)
+    case sendPhoneCode(PhoneSendCodeRequestDTO)
+    case verifyPhoneCode(PhoneVerifyCodeRequestDTO)
 
     var baseURL: URL {
         APIConfiguration.baseURL
@@ -16,6 +18,10 @@ enum AuthTarget: TargetType {
             "/api/v1/auth/login"
         case .signup:
             "/api/v1/auth/signup"
+        case .sendPhoneCode:
+            "/api/v1/auth/phone/send-code"
+        case .verifyPhoneCode:
+            "/api/v1/auth/phone/verify-code"
         }
     }
 
@@ -28,6 +34,10 @@ enum AuthTarget: TargetType {
         case let .login(request):
             .requestJSONEncodable(request)
         case let .signup(request):
+            .requestJSONEncodable(request)
+        case let .sendPhoneCode(request):
+            .requestJSONEncodable(request)
+        case let .verifyPhoneCode(request):
             .requestJSONEncodable(request)
         }
     }

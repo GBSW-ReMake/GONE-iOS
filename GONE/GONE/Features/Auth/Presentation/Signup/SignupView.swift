@@ -10,13 +10,17 @@ import SwiftUI
 import UIKit
 
 struct SignupView: View {
-    @StateObject private var viewModel = SignupViewModel()
+    @StateObject private var viewModel: SignupViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isProfileImageLoading = false
 
     let onDismiss: () -> Void
 
-    init(onDismiss: @escaping () -> Void = {}) {
+    init(
+        signupUseCase: SignupUseCase? = nil,
+        onDismiss: @escaping () -> Void = {}
+    ) {
+        _viewModel = StateObject(wrappedValue: SignupViewModel(signupUseCase: signupUseCase))
         self.onDismiss = onDismiss
     }
 
@@ -66,7 +70,7 @@ struct SignupView: View {
             GONEPrimaryButton(
                 title: viewModel.currentStep.actionTitle,
                 isEnabled: viewModel.isPrimaryActionEnabled,
-                isLoading: false,
+                isLoading: viewModel.isSendingVerificationCode || viewModel.isSigningUp,
                 action: handlePrimaryAction
             )
             .padding(.horizontal, GONESpacing.screenHorizontal)

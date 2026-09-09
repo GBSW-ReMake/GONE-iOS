@@ -10,8 +10,24 @@ struct SignupRequestDTO: Encodable {
     let password: String
     let ticket: String
     let phoneNumber: String
-    let studentNumber: String
-    let name: String
+}
+
+struct PhoneSendCodeRequestDTO: Encodable {
+    let phoneNumber: String
+}
+
+struct PhoneVerifyCodeRequestDTO: Encodable {
+    let phoneNumber: String
+    let code: String
+}
+
+struct PhoneSendCodeResponseDTO: Decodable {
+    let expiresIn: Int
+}
+
+struct PhoneVerifyCodeResponseDTO: Decodable {
+    let ticket: String
+    let expiresIn: Int
 }
 
 struct AuthResponseDTO: Decodable {

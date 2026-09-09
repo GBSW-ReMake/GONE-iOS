@@ -87,6 +87,14 @@ final class SignupViewModel: ObservableObject {
     @Published private(set) var profileImageErrorMessage: String?
     @Published private(set) var serviceErrorMessage: String?
     @Published private(set) var isVerificationRequested = false
+    @Published private(set) var isSendingVerificationCode = false
+    @Published private(set) var isSigningUp = false
+
+    private let signupUseCase: SignupUseCase?
+
+    init(signupUseCase: SignupUseCase? = nil) {
+        self.signupUseCase = signupUseCase
+    }
 
     var isPrimaryActionEnabled: Bool {
         switch currentStep {
@@ -123,7 +131,32 @@ final class SignupViewModel: ObservableObject {
             currentStep = .phoneVerification
         case .phoneVerification:
             guard validatePhoneVerification() else { return }
-            currentStep = .studentInformation
+            guard let signupUseCase else {
+                // UI 단위 테스트와 오프라인 프리뷰에서는 단계 전환만 허용합니다.
+                currentStep = .studentInformation
+                return
+            }
+            guard !isSigningUp else { return }
+
+            isSigningUp = true
+            Task {
+                do {
+                    let ticket = try await signupUseCase.verifyPhoneCode(
+                        verificationCode,
+                        for: normalizedPhoneNumber
+                    )
+                    try await signupUseCase.signup(with: SignupRequest(
+                        identifier: trimmedIdentifier,
+                        password: password,
+                        phoneNumber: normalizedPhoneNumber,
+                        ticket: ticket
+                    ))
+                    currentStep = .studentInformation
+                } catch {
+                    serviceErrorMessage = Self.message(for: error)
+                }
+                isSigningUp = false
+            }
         case .studentInformation:
             guard validateStudentInformation() else { return }
             currentStep = .profileImage
@@ -141,9 +174,25 @@ final class SignupViewModel: ObservableObject {
     func requestVerificationCode() {
         guard validatePhoneNumber() else { return }
 
-        isVerificationRequested = true
+        guard let signupUseCase else {
+            serviceErrorMessage = "인증번호 발송 서비스 연결 정보를 확인 중입니다."
+            return
+        }
+        guard !isSendingVerificationCode else { return }
+
+        isSendingVerificationCode = true
         verificationErrorMessage = nil
-        serviceErrorMessage = "인증번호 발송 API 연결 정보를 확인 중입니다."
+        serviceErrorMessage = nil
+
+        Task {
+            do {
+                _ = try await signupUseCase.requestPhoneVerificationCode(for: normalizedPhoneNumber)
+                isVerificationRequested = true
+            } catch {
+                serviceErrorMessage = Self.message(for: error)
+            }
+            isSendingVerificationCode = false
+        }
     }
 
     func updatePhoneNumber(_ value: String) {
@@ -175,6 +224,17 @@ final class SignupViewModel: ObservableObject {
     private var isValidPhoneNumber: Bool {
         let digits = phoneNumber.filter(\.isNumber)
         return (10...11).contains(digits.count)
+    }
+
+    private var normalizedPhoneNumber: String {
+        phoneNumber.filter(\.isNumber)
+    }
+
+    private static func message(for error: Error) -> String {
+        if let apiError = error as? APIError {
+            return apiError.localizedDescription
+        }
+        return "요청 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
     }
 
     private func validateIdentifier() -> Bool {
