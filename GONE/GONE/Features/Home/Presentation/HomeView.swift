@@ -394,10 +394,12 @@ private struct SchedulePager: View {
                     .accessibilityElement(children: .combine)
                     .id(selectedPeriod)
                     .transition(cardTransition)
-                    .simultaneousGesture(horizontalPagingGesture)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .simultaneousGesture(horizontalPagingGesture)
         .animation(.snappy(duration: 0.28), value: selectedPeriod)
         .onChange(of: schedule.count) { _, count in
             selectedPeriod = max(0, min(selectedPeriod, count - 1))
