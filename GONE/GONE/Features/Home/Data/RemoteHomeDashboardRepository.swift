@@ -102,7 +102,7 @@ final class RemoteHomeDashboardRepository: HomeDashboardRepository {
         let camp = camps.first.map {
             DashboardRequest(kind: .schoolCamping, detail: "\($0.campDate)", status: $0.cancelledAt == nil ? .reserved : .rejected)
         } ?? DashboardRequest(kind: .schoolCamping, detail: "신청 내역이 없어요", status: .notApplied)
-        return [DashboardRequest(kind: .lab, detail: "실습실 신청 API 명세 대기", status: .notApplied), outing, camp]
+        return [DashboardRequest(kind: .lab, detail: "신청 내역이 없어요", status: .notApplied), outing, camp]
     }
 
     private func status(for value: String) -> DashboardRequest.Status {

@@ -11,6 +11,7 @@ final class HomeViewModel: ObservableObject {
 
     @Published private(set) var state: State = .loading
     @Published private(set) var displayedAcademicMonth: Date
+    @Published private(set) var isRefreshing = false
 
     private let fetchDashboard: FetchHomeDashboardUseCase
     private let calendar: Calendar
@@ -28,7 +29,23 @@ final class HomeViewModel: ObservableObject {
     }
 
     func load() async {
-        state = .loading
+        guard case .loaded = state else {
+            await fetchDashboard(showLoading: true)
+            return
+        }
+    }
+
+    func refresh() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+        await fetchDashboard(showLoading: false)
+    }
+
+    private func fetchDashboard(showLoading: Bool) async {
+        if showLoading {
+            state = .loading
+        }
         do {
             state = .loaded(try await fetchDashboard.execute())
         } catch {

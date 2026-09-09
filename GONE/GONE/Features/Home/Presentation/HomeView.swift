@@ -40,7 +40,12 @@ struct HomeView: View {
         Group {
             switch viewModel.state {
             case .loading:
-                ProgressView("홈 정보를 불러오는 중")
+                ZStack {
+                    Color.goneHomeBackground.ignoresSafeArea()
+                    ProgressView("홈 정보를 불러오는 중")
+                        .tint(Color.goneTextSecondary)
+                        .scaleEffect(1.25)
+                }
             case .loaded(let dashboard):
                 dashboardContent(dashboard)
             case .failed:
@@ -54,6 +59,19 @@ struct HomeView: View {
                 }
             }
         }
+        .overlay {
+            if viewModel.isRefreshing {
+                ZStack {
+                    Color.white.opacity(0.28)
+                    ProgressView()
+                        .tint(Color.goneTextSecondary)
+                        .scaleEffect(1.45)
+                }
+                .background(.ultraThinMaterial.opacity(0.32))
+                .ignoresSafeArea()
+            }
+        }
+        .refreshable { await viewModel.refresh() }
         .task { await viewModel.load() }
     }
 
@@ -357,7 +375,9 @@ private struct SchedulePager: View {
                         .foregroundStyle(Color.goneTextPrimary)
                 }
                 Spacer()
-                Text("\(selectedPeriod + 1) / \(schedule.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
+                Text(schedule.isEmpty ? "0 / 0" : "\(selectedPeriod + 1) / \(schedule.count)")
+                    .font(.caption)
+                    .foregroundStyle(Color.goneTextSecondary)
             }
             if !schedule.isEmpty {
                 let item = schedule[selectedPeriod]
@@ -386,16 +406,20 @@ private struct SchedulePager: View {
                     .accessibilityElement(children: .combine)
                     .id(selectedPeriod)
                     .transition(cardTransition)
-                    .highPriorityGesture(horizontalPagingGesture)
+                    .simultaneousGesture(horizontalPagingGesture)
                 }
             }
         }
         .animation(.snappy(duration: 0.28), value: selectedPeriod)
+        .onChange(of: schedule.count) { _, count in
+            selectedPeriod = max(0, min(selectedPeriod, count - 1))
+        }
         .accessibilityLabel("오늘 시간표. 좌우로 넘겨 다음 교시를 확인하세요.")
     }
 
     private var horizontalPagingGesture: some Gesture {
-        DragGesture(minimumDistance: 24).onEnded { value in
+        DragGesture(minimumDistance: 16).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
             if value.translation.width < -30, selectedPeriod < schedule.count - 1 {
                 movesForward = true
                 withAnimation(.snappy) { selectedPeriod += 1 }
@@ -436,7 +460,9 @@ private struct MealPager: View {
                         .foregroundStyle(Color.goneTextPrimary)
                 }
                 Spacer()
-                Text("\(selectedMeal + 1) / \(meals.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
+                Text(meals.isEmpty ? "0 / 0" : "\(selectedMeal + 1) / \(meals.count)")
+                    .font(.caption)
+                    .foregroundStyle(Color.goneTextSecondary)
             }
             if !meals.isEmpty {
                 mealCard(meals[selectedMeal])
@@ -445,6 +471,9 @@ private struct MealPager: View {
             }
         }
         .animation(.snappy(duration: 0.28), value: selectedMeal)
+        .onChange(of: meals.count) { _, count in
+            selectedMeal = max(0, min(selectedMeal, count - 1))
+        }
     }
 
     private func mealCard(_ meal: Meal) -> some View {
@@ -465,7 +494,8 @@ private struct MealPager: View {
                 Text(meal.calories).font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
         }
-        .highPriorityGesture(DragGesture(minimumDistance: 24).onEnded { value in
+        .simultaneousGesture(DragGesture(minimumDistance: 16).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
             if value.translation.width < -30, selectedMeal < meals.count - 1 {
                 movesForward = true
                 withAnimation(.snappy) { selectedMeal += 1 }
