@@ -223,6 +223,11 @@ private struct AcademicScheduleSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
             HStack(spacing: GONESpacing.small) {
+                Image("HomeScheduleIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
                 Text("학사일정")
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Color.goneTextPrimary)
@@ -341,7 +346,16 @@ private struct SchedulePager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             HStack {
-                Text("오늘 시간표").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                HStack(spacing: GONESpacing.small) {
+                    Image("HomeTimetableIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .accessibilityHidden(true)
+                    Text("오늘 시간표")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.goneTextPrimary)
+                }
                 Spacer()
                 Text("\(selectedPeriod + 1) / \(schedule.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
@@ -411,7 +425,16 @@ private struct MealPager: View {
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.small) {
             HStack {
-                Text("오늘 급식").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+                HStack(spacing: GONESpacing.small) {
+                    Image("HomeMealIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .accessibilityHidden(true)
+                    Text("오늘 급식")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.goneTextPrimary)
+                }
                 Spacer()
                 Text("\(selectedMeal + 1) / \(meals.count)").font(.caption).foregroundStyle(Color.goneTextSecondary)
             }
@@ -483,7 +506,16 @@ private struct RequestStatusSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: GONESpacing.medium) {
-            Text("신청현황").font(.headline.weight(.bold)).foregroundStyle(Color.goneTextPrimary)
+            HStack(spacing: GONESpacing.small) {
+                Image("HomeRequestIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
+                Text("신청현황")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(Color.goneTextPrimary)
+            }
             ForEach(requests) { request in
                 let displayRequest = requestForDisplay(request)
                 Button {
